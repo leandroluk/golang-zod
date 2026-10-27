@@ -43,7 +43,7 @@ func (s *BooleanSchema) Nullish() NullishSchema[bool]   { return NewNullishSchem
 func (s *BooleanSchema) Default(v bool) DefaultSchema[bool] {
 	return NewDefaultSchema[bool](s, v)
 }
-func (s *BooleanSchema) Array() ArraySchema[bool] { return NewArraySchema[bool](s) }
+func (s *BooleanSchema) Array() *ArraySchema[bool] { return NewArraySchema[bool](s) }
 func (s *BooleanSchema) Meta(fn func(m *MetaBuilder)) *BooleanSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())
@@ -86,7 +86,7 @@ func (s *NullSchema) Optional() OptionalSchema[any]     { return NewOptionalSche
 func (s *NullSchema) Nullable() NullableSchema[any]     { return NewNullableSchema[any](s) }
 func (s *NullSchema) Nullish() NullishSchema[any]       { return NewNullishSchema[any](s) }
 func (s *NullSchema) Default(v any) DefaultSchema[any]  { return NewDefaultSchema[any](s, v) }
-func (s *NullSchema) Array() ArraySchema[any]           { return NewArraySchema[any](s) }
+func (s *NullSchema) Array() *ArraySchema[any]           { return NewArraySchema[any](s) }
 func (s *NullSchema) Meta(fn func(m *MetaBuilder)) *NullSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())
@@ -98,7 +98,7 @@ func (s *NullSchema) Meta(fn func(m *MetaBuilder)) *NullSchema {
 // --- Any & Unknown ---
 
 // @spec REQ-PRIM-001
-type AnySchema struct {
+type AnyPrimitiveSchema struct {
 	BaseSchema[any]
 }
 
@@ -111,18 +111,18 @@ func (n *anyNode) parse(ctx *parseCtx, in any) (any, bool) {
 
 // @spec REQ-PRIM-001
 // Any accepts any input value without validation.
-func Any() *AnySchema {
-	return &AnySchema{
+func Any() *AnyPrimitiveSchema {
+	return &AnyPrimitiveSchema{
 		BaseSchema: NewBaseSchema[any](&anyNode{}),
 	}
 }
 
-func (s *AnySchema) Optional() OptionalSchema[any]    { return NewOptionalSchema[any](s) }
-func (s *AnySchema) Nullable() NullableSchema[any]    { return NewNullableSchema[any](s) }
-func (s *AnySchema) Nullish() NullishSchema[any]      { return NewNullishSchema[any](s) }
-func (s *AnySchema) Default(v any) DefaultSchema[any] { return NewDefaultSchema[any](s, v) }
-func (s *AnySchema) Array() ArraySchema[any]          { return NewArraySchema[any](s) }
-func (s *AnySchema) Meta(fn func(m *MetaBuilder)) *AnySchema {
+func (s *AnyPrimitiveSchema) Optional() OptionalSchema[any]    { return NewOptionalSchema[any](s) }
+func (s *AnyPrimitiveSchema) Nullable() NullableSchema[any]    { return NewNullableSchema[any](s) }
+func (s *AnyPrimitiveSchema) Nullish() NullishSchema[any]      { return NewNullishSchema[any](s) }
+func (s *AnyPrimitiveSchema) Default(v any) DefaultSchema[any] { return NewDefaultSchema[any](s, v) }
+func (s *AnyPrimitiveSchema) Array() *ArraySchema[any]         { return NewArraySchema[any](s) }
+func (s *AnyPrimitiveSchema) Meta(fn func(m *MetaBuilder)) *AnyPrimitiveSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
@@ -132,7 +132,7 @@ func (s *AnySchema) Meta(fn func(m *MetaBuilder)) *AnySchema {
 
 // @spec REQ-PRIM-001
 // Unknown accepts any input value, identically to Any.
-func Unknown() *AnySchema {
+func Unknown() *AnyPrimitiveSchema {
 	return Any()
 }
 
@@ -224,7 +224,7 @@ func (s *DateSchema) Nullish() NullishSchema[time.Time] { return NewNullishSchem
 func (s *DateSchema) Default(v time.Time) DefaultSchema[time.Time] {
 	return NewDefaultSchema[time.Time](s, v)
 }
-func (s *DateSchema) Array() ArraySchema[time.Time] { return NewArraySchema[time.Time](s) }
+func (s *DateSchema) Array() *ArraySchema[time.Time] { return NewArraySchema[time.Time](s) }
 func (s *DateSchema) Meta(fn func(m *MetaBuilder)) *DateSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())
@@ -279,7 +279,7 @@ func (s *BytesSchema) Nullish() NullishSchema[[]byte] { return NewNullishSchema[
 func (s *BytesSchema) Default(v []byte) DefaultSchema[[]byte] {
 	return NewDefaultSchema[[]byte](s, v)
 }
-func (s *BytesSchema) Array() ArraySchema[[]byte] { return NewArraySchema[[]byte](s) }
+func (s *BytesSchema) Array() *ArraySchema[[]byte] { return NewArraySchema[[]byte](s) }
 func (s *BytesSchema) Meta(fn func(m *MetaBuilder)) *BytesSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())
@@ -343,7 +343,7 @@ func (s *LiteralSchema[T]) Nullish() NullishSchema[T]   { return NewNullishSchem
 func (s *LiteralSchema[T]) Default(v T) DefaultSchema[T] {
 	return NewDefaultSchema[T](s, v)
 }
-func (s *LiteralSchema[T]) Array() ArraySchema[T] { return NewArraySchema[T](s) }
+func (s *LiteralSchema[T]) Array() *ArraySchema[T] { return NewArraySchema[T](s) }
 func (s *LiteralSchema[T]) Meta(fn func(m *MetaBuilder)) *LiteralSchema[T] {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())

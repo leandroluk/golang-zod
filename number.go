@@ -329,7 +329,7 @@ func (s *NumberSchema[T]) Nullish() NullishSchema[T]   { return NewNullishSchema
 func (s *NumberSchema[T]) Default(v T) DefaultSchema[T] {
 	return NewDefaultSchema[T](s, v)
 }
-func (s *NumberSchema[T]) Array() ArraySchema[T] { return NewArraySchema[T](s) }
+func (s *NumberSchema[T]) Array() *ArraySchema[T] { return NewArraySchema[T](s) }
 func (s *NumberSchema[T]) Meta(fn func(m *MetaBuilder)) *NumberSchema[T] {
 	c := s.clone()
 	b := NewMetaBuilder(s.GetMeta())
@@ -393,7 +393,7 @@ func (s *BigIntSchema) Nullish() NullishSchema[*big.Int] { return NewNullishSche
 func (s *BigIntSchema) Default(v *big.Int) DefaultSchema[*big.Int] {
 	return NewDefaultSchema[*big.Int](s, v)
 }
-func (s *BigIntSchema) Array() ArraySchema[*big.Int] { return NewArraySchema[*big.Int](s) }
+func (s *BigIntSchema) Array() *ArraySchema[*big.Int] { return NewArraySchema[*big.Int](s) }
 func (s *BigIntSchema) Meta(fn func(m *MetaBuilder)) *BigIntSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())

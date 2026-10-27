@@ -382,7 +382,7 @@ func (s *StringSchema) Nullish() NullishSchema[string]   { return NewNullishSche
 func (s *StringSchema) Default(v string) DefaultSchema[string] {
 	return NewDefaultSchema[string](s, v)
 }
-func (s *StringSchema) Array() ArraySchema[string] { return NewArraySchema[string](s) }
+func (s *StringSchema) Array() *ArraySchema[string] { return NewArraySchema[string](s) }
 func (s *StringSchema) Meta(fn func(m *MetaBuilder)) *StringSchema {
 	c := s.clone()
 	b := NewMetaBuilder(s.GetMeta())
