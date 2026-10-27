@@ -3,14 +3,15 @@
 Traceability: on
 
 ## Vision
-A complete, idiomatic Go port of **Zod v4** focused on a **pure runtime fluent DSL and dual paradigm** (Schema-First via `z.Object(z.Shape{...})` and Type-First via `z.Object[T]()` with zero-reflection in hot paths), delivering ergonomic, high-throughput data validation for modern Go backends and microservices.
+A complete, idiomatic Go port of **Zod v4** with maximum API compatibility with `colinhacks/zod`. Validation rules live in Go code (a fluent DSL), never in struct tags. Two builder constructors: `z.Object(func(s *z.Shape))` with `s.Field("name", schema)` (output `map[string]any`), and `z.Struct[T](func(s *z.StructShape, t *T))` with `s.Field(&t.Foo, schema)` (typed output, compile-time checked, no reflection at parse time). A mandatory `json:"name"` tag is the key of every struct field (KISS); There is no `ParseInto`. No `z.Shape{...}` map literal. Target toolchain: **Go 1.27.1** (generic methods available; see `INSIGHT.md` §0 for what the compiler accepts).
 
 ## Core Principles
-1. **Zero-Reflection in Hot Paths**: Reflection is used strictly during startup/compilation of `z.Object[T]()`. Hot execution paths run through compiled AST nodes and function closures.
-2. **Dual Paradigms (Schema-First & Type-First)**:
-   - Dynamic: `z.Object(z.Shape{"name": z.String().Min(2)})`
-   - Static/Typed: `z.Object[User]()` reading `json:"..."` and `zod:"..."` tags, with `ParseInto(&dest)` and typed returns `z.Parse[T](schema, input)`.
-3. **Zod v4 Pure Spec**: All formats top-level (`z.Email()`, `z.UUID()`, `z.ISO.DateTime()`, `z.Int()`), zero legacy v3 deprecations.
-4. **Default Validation Messages & i18n**: Out-of-the-box human-friendly validation messages with multi-locale support (`en`, `pt-BR`, `es`), structured path tracking (`ZodIssue`), and the 4 Zod v4 formatters (`Format`, `Flatten`, `Treeify`, `Prettify`).
-5. **Concurrency-Safe & Zero-Allocation Conscious**: Imutabilidade de schemas por padrão para compartilhamento livre entre goroutines sem locks, aliado a `sync.Pool` para reutilização de contextos de execução e buffers.
-6. **Multi-Target Exporters**: Geração nativa de **JSON Schema** (Draft 2020-12 / Draft 07) e **OpenAPI 3.1**, além de importação reversa via `z.FromJSONSchema`.
+1. **Zod v4 pure API**: all string formats and number kinds top-level (`z.Email()`, `z.UUID()`, `z.ISO.DateTime()`, `z.Int()`); no v3 legacy (`.merge()`, `z.string().email()`).
+2. **Compatibility first**: names follow Zod (PascalCase). Unknown-key default is **strip** (as in Zod). `.Optional()` = key may be absent; `.Nullable()` = key required, accepts null; `.Nullish()` = both.
+3. **No validation tags**: the only struct tag ever read is `json:"..."` (by `z.Struct`). `zod:"..."` is forbidden.
+4. **Fluent modifiers only**: `Optional`, `Nullable`, `Nullish`, `Default`, `Array` are chained methods returning distinct wrapper types (never `Base[*T]`: instantiation cycle). There is no `z.Optional(s)` free function.
+5. **Reflection only at `z.Struct` construction**; `Parse`/`ParseJSON`/`Decode` never reflect. `unsafe` only in `struct_unsafe.go`.
+6. **Errors as values**: `(T, error)` with `*ZodError`; 11 issue codes; formatters `Flatten`, `Treeify`, `Prettify` (no deprecated `Format`); i18n (`en`, `pt-BR`, `es`).
+7. **Concurrency-safe, allocation-conscious**: immutable schemas shared across goroutines; `sync.Pool` for parse contexts; streaming JSON input via `encoding/json/v2` + `jsontext`.
+8. **Exporters**: JSON Schema (2020-12, Draft-07, Draft-04), OpenAPI 3.0/3.1, GraphQL SDL, and reverse `z.FromJSONSchema`.
+9. **Zero third-party dependencies**: standard library only.

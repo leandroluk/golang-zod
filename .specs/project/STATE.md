@@ -1,24 +1,58 @@
 # Project State: golang-zod
 
-## Active Context
-- **Current Milestone**: `M1-foundation`
-- **Active Feature**: Specifying and initializing repository foundation (`01-core-error-i18n`).
-- **Focus**: Porting pure Zod v4 to Go with zero-reflection in hot paths, dual paradigms (Schema-First & Type-First), structured error taxonomy and i18n.
+**Last Updated:** 2026-10-27
 
-## Recent Progress (last 5 items)
-- Initialized repository with Go module `github.com/leandroluk/golang-zod`.
-- Defined full architecture, paradigms, and Zod v4 mapping in `INSIGHT.md`.
-- Established `.specs/` graph-spec-design structure (`PROJECT.md`, `ROADMAP.md`, `STATE.md`).
+## Current Work
+Specification phase complete for all 9 features (mirrors `rust-zod`: 01 core/errors/i18n, 02 primitives, 03 enums/collections, 04 objects, 05 combinators, 06 modifiers/pipelines, 07 JSON Schema/OpenAPI, 08 GraphQL, 09 optimizations). Implementation has NOT started; it will be done by Gemini following `.specs/features/*/spec.md`, `INSIGHT.md` and `.specs/codebase/*`.
 
-## Recent Decisions (last 5 items)
-- **ADR-001**: Pure Zod v4 spec only — reject v3 legacy deprecations (`z.string().email()`, `passthrough()`, etc.).
-- **ADR-002**: Bootstrap-only reflection for `z.Object[T]()` — build and cache immutable AST nodes once; zero reflection in hot validation loops.
-- **ADR-003**: Native concurrency safety — schemas are immutable value pointers, safe to share across goroutines without mutexes.
-- **ADR-004**: Memory efficiency via `sync.Pool` for `ParseContext` and issue path buffers.
+## Todos
+- [x] TASK-CORE-001: Option and Nullable presence types — Execute phase
+- [ ] TASK-CORE-002: Error taxonomy, issues, and ZodError — Execute phase
+- [ ] TASK-CORE-003: Error formatters Flatten, Treeify, Prettify — Execute phase
+- [ ] TASK-CORE-004: i18n system, catalogs, and Accept-Language negotiation — Execute phase
+- [ ] TASK-CORE-005: Metadata and MetaBuilder — Execute phase
+- [ ] TASK-CORE-006: Untyped execution engine and parse context pool — Execute phase
+- [ ] TASK-CORE-007: Typed Schema interface, entry points, and global context configuration — Execute phase
+- [ ] TASK-CORE-008: Comprehensive verification and test suite for Milestone 1 — Execute phase
+- [ ] Implement M2 `02-primitives-formats-coercion`
+- [ ] Implement M3 `03-enums-collections`
+- [ ] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
+- [ ] Implement M5 `06-modifiers-refinements-pipelines`
+- [ ] Implement M6 `07-json-schema-openapi`, `08-graphql-builder`
+- [ ] Implement M7 `09-optimizations`
 
-## Blockers & Open Questions
-- None.
+## Active Blockers
+- none
 
-## Cost
-- Initial index sync: `added=9 modified=0 deleted=0` (nexspec format 9).
+## Recent Decisions (Last 15)
+- [2026-10-27] **ADR-001** Pure Zod v4 API; names follow Zod; unknown-key default is **strip** (Zod default), `.Strict()`, `.Loose()`, `.Strip()`, `.Catchall()`; `z.StrictObject`/`z.LooseObject` kept (exist in v4).
+- [2026-10-27] **ADR-002** Fluent modifiers only (`.Optional()`, `.Nullable()`, `.Nullish()`, `.Default()`, `.Array()`), returning distinct wrapper types; no `z.Optional(s)`. Verified on go1.27.1: `Base[T] -> Base[*T]` is an instantiation cycle; interface methods cannot be generic.
+- [2026-10-27] **ADR-003** `.Optional()` = key may be absent (`Option[T]`); `.Nullable()` = key required, accepts null (`Nullable[T]`); `.Nullish()` = both (`Option[Nullable[T]]`).
+- [2026-10-27] **ADR-004** Struct fields registered in `z.Struct` REQUIRE `json:"name"`; no fallback to the Go field name. `zod:"..."` tags forbidden. (`z.ObjectBy[T]` removed.)
+- [2026-10-27] **ADR-005** `reflect` allowed only in `struct.go`; `Parse/ParseJSON/Decode` never reflect.
+- [2026-10-27] **ADR-018** (user clarification, supersedes the "additional key" wording of ADR-015/017) `z.Config.UseContext(z.ContextOptions{LocaleKey, AbortEarlyKey})` REPLACES the default context keys: `LocaleKey: "lang"` changes `"github.com/leandroluk/golang-zod#locale"` to `"lang"`; afterwards the library reads AND `z.WithLocale` writes `"lang"`, and the old default is no longer consulted. Zero fields keep their default; `UseContext(ContextOptions{})` restores defaults; each call replaces the whole configuration; keys are `any`. Resolution: `ctx.Value(<active locale key>)` > `SetLocale` > `LocaleEN`.
+- [2026-10-27] **ADR-017** (user decision) Standard `context.Context` only (no `z.Context` alias/wrapper) and well-known default context keys, namespaced strings: `LocaleContextKey = "github.com/leandroluk/golang-zod#locale"` (value `Locale` or string tag/`Accept-Language`) and `AbortEarlyContextKey = "github.com/leandroluk/golang-zod#abortEarly"` (value `bool`). Any code can set them with plain `context.WithValue` without importing `z` helpers; `z.WithLocale`/`z.WithAbortEarly` are shortcuts. Read with the raw string (typed keys would not match). Accepted cost: staticcheck SA1029 on string keys, suppressed at the library's call sites. `z.Config.UseContext{LocaleKey}` is now only for an application's own extra key. Resolution: default key > configured `LocaleKey` > `SetLocale` > `LocaleEN`.
+- [2026-10-27] **ADR-016** (user decision) Context is an OPTIONAL TRAILING variadic parameter, not the first parameter: `Parse(in any, ctx ...Context)`, `ParseJSON(data, ctx ...Context)`, `Decode(r, ctx ...Context)`, `Codec.Decode/Encode(v, ctx ...Context)`, `ParseTo(data, dst, ctx ...Context)`. `type Context = context.Context` (alias); only the first value is used; no context means `context.Background()` (global locale, no cancellation). Supersedes the ctx-first signature (user's earlier INSIGHT edit) and ADR-006's `ParseOption`: the `ParseOption` type is removed; per-call settings travel in the context (`z.WithAbortEarly(ctx)`, `z.WithLocale(ctx, tag)`). Ambient/implicit scope remains impossible in Go (no goroutine-local storage); an implicit scope was explicitly rejected.
+- [2026-10-27] **ADR-015** `z.Config.UseContext(z.ContextOptions{LocaleKey any})` (user request): global startup configuration naming the context key that already holds the request language (`ctx.Value(LocaleKey)`, value `Locale` or tag/`Accept-Language` string). Resolution: `z.WithLocale` > `LocaleKey` > `SetLocale` > `LocaleEN`. `LocaleKey` is `any` (typed unexported keys are the Go idiom); atomic storage, replaces previous call. User's `z.Context(c)` + `defer zodCtx.Done()` middleware was NOT adopted: it needs a global registry keyed by the framework context object (Fiber reuses/pools `*fiber.Ctx`), so a forgotten `Done()` leaks or leaks state across requests, and nothing guarantees a framework context implements `context.Context`. The same effect is `z.WithLocale(ctx, ...)` or the configured `LocaleKey`. User clarified the intent: the library accepts a context and must respect it within the scope that passes it; specified as REQ-CORE-017 (locale + cancellation/deadline); the scope is the explicit `ctx` argument (no ambient scope in Go).
+- [2026-10-27] **ADR-014** Locale scoped in `context.Context` (user request, for per-request language, e.g. a Fiber wrapper). Every parse takes `ctx context.Context` first (user edit of INSIGHT §2.1, adopted in all specs); `WithContext` option removed. KISS version (user decision): a single function `z.WithLocale(ctx, tag string) context.Context` accepting a tag or a raw `Accept-Language` value (empty/unknown returns ctx unchanged), plus `RegisterLocale`; no `ContextWithLocale`, `LocaleFromAcceptLanguage`, `LocaleFromTag`, or per-call locale option. Resolution ctx > `SetLocale` > `LocaleEN`; messages resolved at issue creation, schemas stay immutable. A callback-scoped `z.WithLocale(tag, func() error)` was rejected: Go has no goroutine-local storage. Note: INSIGHT's `opts ...Option` was corrected to `ParseOption` (identifier clash with `Option[T]`).
+- [2026-10-27] **ADR-013** `ParseInto` removed (user decision): with `z.Object` / `z.Struct` split, typed output is just `Parse` on a `z.Struct` schema. REQ-OBJ-007 is retired (ID kept unused). `object_into.go` no longer exists.
+- [2026-10-27] **ADR-010** Struct-first via pointer-to-field (`s.Field(&t.Foo, schema)`): `build` runs once with a zero `T`, offset+type matched with `reflect` at construction, runtime writes by `unsafe.Add` confined to `struct_unsafe.go`. User's chained draft `s.Field(&t.Foo).String().Optional()` rejected as unsound (nothing registers the chain result; compiler cannot restrict `.String()`), pending user confirmation.
+- [2026-10-27] **ADR-011** (superseded by ADR-012) A single `z.Object[T](func(t *T, s *z.Shape))` with `Field[F, K string|*F]` was specified, then dropped: verified on go1.27.1 that the trailing builder parameter cannot be omitted (not even variadic `...*T`) and a union of the two func types cannot infer `T`.
+- [2026-10-27] **ADR-012** Two builder constructors (user decision): `z.Object(func(s *z.Shape)) *ObjectSchema` (string keys via `Shape.Field[F](name string, sch Schema[F])`, output `map[string]any`) and `z.Struct[T](func(s *z.StructShape, t *T)) *StructSchema[T]` (pointer keys via `StructShape.Field[F](p *F, sch Schema[F])`, output `T`). Separate types make restrictions compile-time: `*StructSchema[T]` has no `.Loose/.Catchall/.Extend/.Partial/.Required`. Files: `object.go`, `struct.go` (reflect), `struct_unsafe.go` (unsafe), `object_into.go` (reflect).
+- [2026-10-27] **ADR-006** No `SafeParse` and no async variants (`(T, error)` + goroutines; the optional trailing `context.Context` carries cancellation, see ADR-016/017). There is no `ParseOption` type (removed by ADR-016; `Option` is the presence type `Option[T]`).
+- [2026-10-27] **ADR-021** Decisions after the Zod v4 audit (user): (1) `Format()` / `formatError` CUT (deprecated in Zod 4); formatters are `Flatten`, `Treeify`, `Prettify`. (2) `.describe()` becomes a metadata builder method: `z.String().Meta(func(m *z.MetaBuilder){ m.Describe("..."); m.Examples(...) })`; the builder type is `MetaBuilder` (not `Meta`, since a Go type cannot have a field and a method with the same name); `GetMeta()` reads; the builder starts from the current metadata so repeated `.Meta(...)` MERGES by construction (`m.Reset()` replaces). (3) Rule "only non-deprecated Zod v4 names, everywhere": `.Passthrough()` replaced by `.Loose()` across all specs; `.Strict()`, `.Strip()`, `.Catchall()` stay. (4) An unmergeable intersection returns `ErrUnmergeableIntersection` as an `error` (not `*ZodError`, no panic). (5) `Array.Unique()` removed (not in Zod v4); `Array.Unwrap()` added. (6) Meta merge is answered by (2).
+- [2026-10-27] **ADR-020** Zod v4 fidelity audit (sources: zod.dev api/errors/json-schema/codecs/metadata + `core/errors.ts`, `core/schemas.ts`, `classic/schemas.ts`). Corrected in the specs: `Default`/`Prefault` apply only to an absent value, never `null` (REQ-PIPE-001); `Flatten` keys use only the first path segment (REQ-CORE-007); `Issue` fields per code, no `Received` (REQ-CORE-006); discriminated-union no-match issue fields and `path=[discriminator]` (REQ-COMB-002); XOR zero/many-match issues with `Inclusive`/`Matches` (REQ-COMB-003); intersection conflict is an error, not an issue (REQ-COMB-004); record semantics for enum/other keys (REQ-OBJ-008); JSON Schema `io` default `Output`, object `additionalProperties` rules, unrepresentable types error by default, extra options (REQ-EXP-002/003/004, spec 07 summary); error customization string-or-function with Zod's 5-level precedence (REQ-PIPE-007); codec encode rules and `stringbool` encoding (REQ-PIPE-005/006); duplicate `Meta.ID` panics (REQ-CORE-010). Items from the audit still NOT in the specs (section C of the review): `z.CUID`, `z.NaN`, `z.TemplateLiteral`, `z.File`, `z.JSON`, `Literal().Values()`, `.Nonoptional()`, `.ExactOptional()`/`ExactPartial`, `.SafeExtend()`, `DeepPartial`, `z.InvertCodec`, top-level `z.Decode`/`z.Encode`, `.Check`, `.Refine` params (`abort`, `path`, `when`), `Array.Unwrap()`, `Date().Min/Max`, `.Step`, `Enum.Options()`.
+- [2026-10-27] **ADR-019** Spec audit with a compiled skeleton (go1.27.1, `go vet` clean) found and fixed two Go name conflicts: type `Null[T]` vs constructor `z.Null()` → type renamed `Nullable[T]` (constructors `NullableOf`, `NullableNull`); getter `Meta()` vs setter `.Meta(m)` → getter is `GetMeta()`. The skeleton also confirmed: `Schema[T]` with unexported `node()`, wrapper `OptionalSchema[T]` implementing `Schema[Option[T]]`, `Shape.Field[F]`/`StructShape.Field[F]` generic methods with compile-time type checking, `String().Optional()` bound to a `z.Option[string]` field.
+- [2026-10-27] **ADR-007** Keep both Zod aliases `GTE`/`Min`, `LTE`/`Max`.
+- [2026-10-27] **ADR-008** Standard library only; stream JSON with `encoding/json/v2` + `jsontext` (verified: compiles without GOEXPERIMENT on go1.27.1).
+- [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
+## Recent Progress (Last 10)
+- [2026-10-27] TASK-CORE-001 complete: Option[T] and Nullable[T] presence types implemented with json/v2 streaming support. Gate: 5/5 pass. [REQ-CORE-004]
+- [2026-10-27] INSIGHT.md rewritten and validated against go1.27.1; all `.specs` (project, codebase, 9 features) rewritten to match.
+
+## Lessons Learned (Last 5)
+- Verify language-level claims with the compiler before specifying them (e.g. generic-method limits).
+
+## Open Questions
+- None. The six decisions raised by the Zod v4 audit were answered on 2026-10-27 (see ADR-021).
