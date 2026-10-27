@@ -3,18 +3,10 @@
 **Last Updated:** 2026-10-27
 
 ## Current Work
-Milestone 3 (`03-enums-collections`) complete. Executing Milestone 4 (`04-objects-records`, `05-unions-intersections-lazy`).
+Milestone 4 (`04-objects-records`, `05-unions-intersections-lazy`) complete. Executing Milestone 5 (`06-modifiers-refinements-pipelines`).
 
 ## Todos
-- [x] TASK-COLL-001: Enum constructor and operations — Execute phase
-- [x] TASK-COLL-002: Array schema and sizing checks — Execute phase
-- [x] TASK-COLL-003: Heterogeneous Tuple schema — Execute phase
-- [x] TASK-COLL-004: Set schema — Execute phase
-- [x] TASK-COLL-005: Map schema — Execute phase
-- [x] TASK-COLL-006: Comprehensive tests for Milestone 3 — Execute phase
-- [ ] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
-- [ ] Implement M3 `03-enums-collections`
-- [ ] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
+- [x] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
 - [ ] Implement M5 `06-modifiers-refinements-pipelines`
 - [ ] Implement M6 `07-json-schema-openapi`, `08-graphql-builder`
 - [ ] Implement M7 `09-optimizations`
@@ -46,6 +38,7 @@ Milestone 3 (`03-enums-collections`) complete. Executing Milestone 4 (`04-object
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-27] Milestone 4 (04-objects-records, 05-unions-intersections-lazy) complete: Object (strip/strict/loose/extend/pick/omit/partial/required/keyof/catchall), Struct (bootstrap reflect, runtime unsafe zero-reflect), Record (strict/loose/partial), Union (first-match), XOR, DiscriminatedUnion (O(1)), Intersection with merge & conflict check, Lazy recursive memoized schema, architectural invariant test. Gate: 75/75 pass with -race. [REQ-OBJ-001]..[REQ-OBJ-010] [REQ-COMB-001]..[REQ-COMB-008]
 - [2026-10-27] Milestone 3 (03-enums-collections) complete: Enum, Array, Tuple with Rest, Set with collapsed duplicates, Map with key validation, and modifiers. Gate: 53/53 pass. [REQ-COLL-001]..[REQ-COLL-006]
 - [2026-10-27] Milestone 2 (02-primitives-formats-coercion) complete: primitives, string checks/transforms, 20+ top-level formats, ISO, NumberSchema[T], BigInt, Coerce, modifiers. Gate: 43/43 pass. [REQ-PRIM-001]..[REQ-PRIM-009]
 - [2026-10-27] Milestone 1 (01-core-error-i18n) complete: node engine, parseCtx pool, Schema[T], Parse/ParseJSON/Decode, Config.UseContext, context cancellation, full test suite with -race passing. Gate: 22/22 pass. [REQ-CORE-001] [REQ-CORE-002] [REQ-CORE-003] [REQ-CORE-011] [REQ-CORE-012] [REQ-CORE-015] [REQ-CORE-016] [REQ-CORE-017]

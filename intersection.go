@@ -1,0 +1,138 @@
+package z
+
+import (
+	"errors"
+	"fmt"
+)
+
+// @spec REQ-COMB-004
+// ErrUnmergeableIntersection is returned when two valid intersection results conflict.
+var ErrUnmergeableIntersection = errors.New("unmergeable intersection")
+
+// @spec REQ-COMB-004
+// IntersectionSchema parses input with two schemas and merges their results.
+type IntersectionSchema struct {
+	BaseSchema[any]
+	left  AnySchema
+	right AnySchema
+}
+
+type intersectionNode struct {
+	schema *IntersectionSchema
+}
+
+func (n *intersectionNode) kind() nodeKind { return kindIntersection }
+func (n *intersectionNode) parse(ctx *parseCtx, in any) (any, bool) {
+	if err := ctx.checkCancel(); err != nil {
+		return nil, false
+	}
+
+	leftOut, leftOk := n.schema.left.node().parse(ctx, in)
+	if !leftOk {
+		return nil, false
+	}
+
+	rightOut, rightOk := n.schema.right.node().parse(ctx, in)
+	if !rightOk {
+		return nil, false
+	}
+
+	merged, err := mergeValues(leftOut, rightOut, "")
+	if err != nil {
+		// ADR-021: conflict returns error, not *ZodError
+		// Record error onto parseCtx or fail
+		ctx.addIssue(Issue{
+			Code:    Custom,
+			Message: fmt.Sprintf("%v: %v", ErrUnmergeableIntersection, err),
+		})
+		return nil, false
+	}
+
+	return merged, true
+}
+
+func mergeValues(a, b any, path string) (any, error) {
+	if a == nil && b == nil {
+		return nil, nil
+	}
+	if a == nil || b == nil {
+		return nil, fmt.Errorf("conflict at path %q: nil vs non-nil", path)
+	}
+
+	aMap, aIsMap := a.(map[string]any)
+	bMap, bIsMap := b.(map[string]any)
+	if aIsMap && bIsMap {
+		res := make(map[string]any, len(aMap)+len(bMap))
+		for k, v := range aMap {
+			res[k] = v
+		}
+		for k, v := range bMap {
+			if existing, exists := res[k]; exists {
+				subPath := k
+				if path != "" {
+					subPath = path + "." + k
+				}
+				mergedVal, err := mergeValues(existing, v, subPath)
+				if err != nil {
+					return nil, err
+				}
+				res[k] = mergedVal
+			} else {
+				res[k] = v
+			}
+		}
+		return res, nil
+	}
+
+	aArr, aIsArr := a.([]any)
+	bArr, bIsArr := b.([]any)
+	if aIsArr && bIsArr {
+		if len(aArr) != len(bArr) {
+			return nil, fmt.Errorf("conflict at path %q: array lengths differ (%d != %d)", path, len(aArr), len(bArr))
+		}
+		res := make([]any, len(aArr))
+		for i := range aArr {
+			subPath := fmt.Sprintf("%s[%d]", path, i)
+			mergedElem, err := mergeValues(aArr[i], bArr[i], subPath)
+			if err != nil {
+				return nil, err
+			}
+			res[i] = mergedElem
+		}
+		return res, nil
+	}
+
+	// Scalars must be equal
+	if a == b {
+		return a, nil
+	}
+
+	return nil, fmt.Errorf("conflict at path %q: conflicting scalar values (%v != %v)", path, a, b)
+}
+
+// @spec REQ-COMB-004
+// Intersection creates a schema requiring both left and right to succeed, merging outputs.
+func Intersection(left, right AnySchema) *IntersectionSchema {
+	s := &IntersectionSchema{
+		left:  left,
+		right: right,
+	}
+	s.BaseSchema = NewBaseSchema[any](&intersectionNode{schema: s})
+	return s
+}
+
+// @spec REQ-COMB-008
+func (s *IntersectionSchema) Optional() OptionalSchema[any] { return NewOptionalSchema[any](s) }
+func (s *IntersectionSchema) Nullable() NullableSchema[any] { return NewNullableSchema[any](s) }
+func (s *IntersectionSchema) Nullish() NullishSchema[any]   { return NewNullishSchema[any](s) }
+func (s *IntersectionSchema) Default(v any) DefaultSchema[any] {
+	return NewDefaultSchema[any](s, v)
+}
+func (s *IntersectionSchema) Array() *ArraySchema[any] { return NewArraySchema[any](s) }
+func (s *IntersectionSchema) Meta(fn func(m *MetaBuilder)) *IntersectionSchema {
+	c := *s
+	b := NewMetaBuilder(s.GetMeta())
+	fn(b)
+	c.SetMeta(b.Build())
+	return &c
+}

@@ -43,13 +43,13 @@ func NewBaseSchema[T any](n node) BaseSchema[T] {
 	}
 }
 
-func (s *BaseSchema[T]) node() node {
+func (s BaseSchema[T]) node() node {
 	return s.innerNode
 }
 
 // @spec REQ-CORE-002
 // GetMeta returns the schema's metadata.
-func (s *BaseSchema[T]) GetMeta() Meta {
+func (s BaseSchema[T]) GetMeta() Meta {
 	return s.meta
 }
 
@@ -62,7 +62,7 @@ func (s *BaseSchema[T]) SetMeta(m Meta) {
 // @spec REQ-CORE-002
 // @spec REQ-CORE-012
 // @spec REQ-CORE-017
-func (s *BaseSchema[T]) Parse(in any, ctx ...context.Context) (T, error) {
+func (s BaseSchema[T]) Parse(in any, ctx ...context.Context) (T, error) {
 	c := extractContext(ctx)
 	if err := c.Err(); err != nil {
 		var zero T
@@ -96,7 +96,7 @@ func (s *BaseSchema[T]) Parse(in any, ctx ...context.Context) (T, error) {
 // @spec REQ-CORE-002
 // @spec REQ-CORE-003
 // @spec REQ-CORE-017
-func (s *BaseSchema[T]) ParseJSON(data []byte, ctx ...context.Context) (T, error) {
+func (s BaseSchema[T]) ParseJSON(data []byte, ctx ...context.Context) (T, error) {
 	c := extractContext(ctx)
 	if err := c.Err(); err != nil {
 		var zero T
@@ -116,7 +116,7 @@ func (s *BaseSchema[T]) ParseJSON(data []byte, ctx ...context.Context) (T, error
 // @spec REQ-CORE-002
 // @spec REQ-CORE-003
 // @spec REQ-CORE-017
-func (s *BaseSchema[T]) Decode(r io.Reader, ctx ...context.Context) (T, error) {
+func (s BaseSchema[T]) Decode(r io.Reader, ctx ...context.Context) (T, error) {
 	c := extractContext(ctx)
 	if err := c.Err(); err != nil {
 		var zero T
