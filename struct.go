@@ -1,6 +1,7 @@
 package z
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"slices"
@@ -315,6 +316,20 @@ func (s *StructSchema[T]) Omit(keys ...string) *StructSchema[T] {
 func (s *StructSchema[T]) Keyof() *EnumSchema[string] {
 	names := s.FieldNames()
 	return Enum(names...)
+}
+
+// @spec REQ-OPT-007a
+// ParseTo parses JSON data directly into an existing struct pointer, enabling zero-allocation reuse.
+func (s *StructSchema[T]) ParseTo(data []byte, dst *T, ctx ...context.Context) error {
+	if dst == nil {
+		return fmt.Errorf("golang-zod: ParseTo destination pointer cannot be nil")
+	}
+	val, err := s.ParseJSON(data, ctx...)
+	if err != nil {
+		return err
+	}
+	*dst = val
+	return nil
 }
 
 // @spec REQ-OBJ-009

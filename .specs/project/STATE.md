@@ -3,13 +3,13 @@
 **Last Updated:** 2026-10-27
 
 ## Current Work
-Milestone 6 (`07-json-schema-openapi`, `08-graphql-builder`) complete. Executing Milestone 7 (`09-optimizations`) & Docsify documentation.
+Milestones 1–7 complete. Building comprehensive Docsify documentation site matching `rust-zod/docs`.
 
 ## Todos
 - [x] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
 - [x] Implement M5 `06-modifiers-refinements-pipelines`
 - [x] Implement M6 `07-json-schema-openapi`, `08-graphql-builder`
-- [ ] Implement M7 `09-optimizations`
+- [x] Implement M7 `09-optimizations`
 - [ ] Build complete Docsify documentation site matching `rust-zod/docs`
 
 ## Active Blockers
@@ -39,6 +39,7 @@ Milestone 6 (`07-json-schema-openapi`, `08-graphql-builder`) complete. Executing
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-27] Milestone 7 (09-optimizations) complete: Inline path stack with [8]PathSegment and zero allocations for shallow paths, spill support for 12+ levels, sync.Pool isolation test under 10 000 concurrent iterations, Struct.ParseTo destination reuse, benchmarks for primitives, email, object, struct. Gate: 96/96 pass with -race. [REQ-OPT-001]..[REQ-OPT-007]
 - [2026-10-27] Milestone 6 (07-json-schema-openapi, 08-graphql-builder) complete: ToJSONSchema (Draft 2020-12, Draft 07, Draft 04, OpenAPI 3.0/3.1, IO Input/Output, Unrepresentable, Cycle detection, $defs deduplication), FromJSONSchema with dynamic reconstruction, ToGraphQLSDL (types, inputs, enums, unions, custom scalars, inverted nullability, recursive cycle prevention, unsupported tuple validation). Gate: 94/94 pass with -race. [REQ-EXP-001]..[REQ-EXP-007] [REQ-GQL-001]..[REQ-GQL-005]
 - [2026-10-27] Milestone 5 (06-modifiers-refinements-pipelines) complete: Fallback modifiers (Default, Prefault, Catch, Readonly), Refinements (Check, Refine, SuperRefine, RefineCtx with cancellation), Pipelines (Transform, Pipe, Preprocess), Codec with Encode/DecodeValue/ErrEncodeUnsupported, StringBool with options, recipe codecs (JSONString, Base64Bytes, StringInt, StringNumber, EpochDate). Gate: 86/86 pass with -race. [REQ-PIPE-001]..[REQ-PIPE-009]
 - [2026-10-27] Milestone 4 (04-objects-records, 05-unions-intersections-lazy) complete: Object (strip/strict/loose/extend/pick/omit/partial/required/keyof/catchall), Struct (bootstrap reflect, runtime unsafe zero-reflect), Record (strict/loose/partial), Union (first-match), XOR, DiscriminatedUnion (O(1)), Intersection with merge & conflict check, Lazy recursive memoized schema, architectural invariant test. Gate: 75/75 pass with -race. [REQ-OBJ-001]..[REQ-OBJ-010] [REQ-COMB-001]..[REQ-COMB-008]

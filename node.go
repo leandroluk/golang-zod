@@ -59,20 +59,22 @@ const (
 // @spec REQ-CORE-001
 // @spec REQ-CORE-012
 // @spec REQ-CORE-017
+// @spec REQ-OPT-001
 // parseCtx holds ephemeral execution state recycled through sync.Pool.
 type parseCtx struct {
 	ctx        context.Context
 	locale     Locale
 	abortEarly bool
 	direction  parseDirection
-	path       []PathSegment
+	pathInline [8]PathSegment
+	pathLen    int
+	pathSpill  []PathSegment
 	issues     []Issue
 }
 
 var parseCtxPool = sync.Pool{
 	New: func() any {
 		return &parseCtx{
-			path:   make([]PathSegment, 0, 16),
 			issues: make([]Issue, 0, 8),
 		}
 	},
@@ -88,7 +90,8 @@ func acquireParseCtx(ctx context.Context) *parseCtx {
 	pc.locale = resolveActiveLocale(ctx)
 	pc.abortEarly = isAbortEarly(ctx)
 	pc.direction = directionParse
-	pc.path = pc.path[:0]
+	pc.pathLen = 0
+	pc.pathSpill = pc.pathSpill[:0]
 	pc.issues = pc.issues[:0]
 	return pc
 }
@@ -102,28 +105,49 @@ func releaseParseCtx(pc *parseCtx) {
 	pc.locale = nil
 	pc.abortEarly = false
 	pc.direction = directionParse
-	pc.path = pc.path[:0]
+	pc.pathLen = 0
+	pc.pathSpill = pc.pathSpill[:0]
 	pc.issues = pc.issues[:0]
 	parseCtxPool.Put(pc)
 }
 
 // pushPath pushes a segment onto the context's path.
 func (c *parseCtx) pushPath(seg PathSegment) {
-	c.path = append(c.path, seg)
+	if c.pathLen < len(c.pathInline) {
+		c.pathInline[c.pathLen] = seg
+	} else {
+		c.pathSpill = append(c.pathSpill, seg)
+	}
+	c.pathLen++
 }
 
 // popPath pops the last segment from the context's path.
 func (c *parseCtx) popPath() {
-	if len(c.path) > 0 {
-		c.path = c.path[:len(c.path)-1]
+	if c.pathLen > 0 {
+		c.pathLen--
+		if c.pathLen >= len(c.pathInline) {
+			c.pathSpill = c.pathSpill[:len(c.pathSpill)-1]
+		}
 	}
+}
+
+func (c *parseCtx) currentPath() []PathSegment {
+	if c.pathLen == 0 {
+		return nil
+	}
+	res := make([]PathSegment, c.pathLen)
+	inlineCount := min(c.pathLen, len(c.pathInline))
+	copy(res, c.pathInline[:inlineCount])
+	if c.pathLen > len(c.pathInline) {
+		copy(res[inlineCount:], c.pathSpill)
+	}
+	return res
 }
 
 // addIssue records an issue, resolving its message via the active locale.
 func (c *parseCtx) addIssue(issue Issue) {
-	if len(issue.Path) == 0 && len(c.path) > 0 {
-		issue.Path = make([]PathSegment, len(c.path))
-		copy(issue.Path, c.path)
+	if len(issue.Path) == 0 && c.pathLen > 0 {
+		issue.Path = c.currentPath()
 	}
 	resolveIssueMessage(&issue, c.locale)
 	c.issues = append(c.issues, issue)
