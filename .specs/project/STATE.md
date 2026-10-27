@@ -3,18 +3,17 @@
 **Last Updated:** 2026-10-27
 
 ## Current Work
-Milestone 1 (01-core-error-i18n) complete. Ready for Milestone 2 (`02-primitives-formats-coercion`).
+Milestone 2 (`02-primitives-formats-coercion`) complete. Executing Milestone 3 (`03-enums-collections`).
 
 ## Todos
-- [x] TASK-CORE-001: Option and Nullable presence types — Execute phase
-- [x] TASK-CORE-002: Error taxonomy, issues, and ZodError — Execute phase
-- [x] TASK-CORE-003: Error formatters Flatten, Treeify, Prettify — Execute phase
-- [x] TASK-CORE-004: i18n system, catalogs, and Accept-Language negotiation — Execute phase
-- [x] TASK-CORE-005: Metadata and MetaBuilder — Execute phase
-- [x] TASK-CORE-006: Untyped execution engine and parse context pool — Execute phase
-- [x] TASK-CORE-007: Typed Schema interface, entry points, and global context configuration — Execute phase
-- [x] TASK-CORE-008: Comprehensive verification and test suite for Milestone 1 — Execute phase
-- [ ] Implement M2 `02-primitives-formats-coercion`
+- [x] TASK-PRIM-001: Core primitives and literal — Execute phase
+- [x] TASK-PRIM-002: StringSchema, checks, and transforms — Execute phase
+- [x] TASK-PRIM-003: Top-level string formats — Execute phase
+- [x] TASK-PRIM-004: ISO namespace — Execute phase
+- [x] TASK-PRIM-005: Numbers and numeric checks — Execute phase
+- [x] TASK-PRIM-006: Coerce namespace — Execute phase
+- [x] TASK-PRIM-007: Comprehensive tests for Milestone 2 — Execute phase
+- [ ] Implement M3 `03-enums-collections`
 - [ ] Implement M3 `03-enums-collections`
 - [ ] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
 - [ ] Implement M5 `06-modifiers-refinements-pipelines`
@@ -48,6 +47,7 @@ Milestone 1 (01-core-error-i18n) complete. Ready for Milestone 2 (`02-primitives
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-27] Milestone 2 (02-primitives-formats-coercion) complete: primitives, string checks/transforms, 20+ top-level formats, ISO, NumberSchema[T], BigInt, Coerce, modifiers. Gate: 43/43 pass. [REQ-PRIM-001]..[REQ-PRIM-009]
 - [2026-10-27] Milestone 1 (01-core-error-i18n) complete: node engine, parseCtx pool, Schema[T], Parse/ParseJSON/Decode, Config.UseContext, context cancellation, full test suite with -race passing. Gate: 22/22 pass. [REQ-CORE-001] [REQ-CORE-002] [REQ-CORE-003] [REQ-CORE-011] [REQ-CORE-012] [REQ-CORE-015] [REQ-CORE-016] [REQ-CORE-017]
 - [2026-10-27] TASK-CORE-005 complete: Meta struct and fluent MetaBuilder with Describe, Examples, Custom, and duplicate ID panic check. Gate: 2/2 pass. [REQ-CORE-010]
 - [2026-10-27] TASK-CORE-004 complete: i18n catalogs (EN, PtBR, ES), SetLocale, RegisterLocale, and WithLocale Accept-Language negotiation. Gate: 4/4 pass. [REQ-CORE-008] [REQ-CORE-009] [REQ-CORE-013] [REQ-CORE-014]

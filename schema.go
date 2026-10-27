@@ -80,6 +80,11 @@ func (s *BaseSchema[T]) Parse(in any, ctx ...context.Context) (T, error) {
 		return zero, NewZodError(issues)
 	}
 
+	if out == nil {
+		var zero T
+		return zero, nil
+	}
+
 	if typed, ok := out.(T); ok {
 		return typed, nil
 	}
