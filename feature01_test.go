@@ -1,6 +1,7 @@
 package z_test
 
 import (
+	"context"
 	"encoding/json/v2"
 	"strings"
 	"testing"
@@ -310,4 +311,97 @@ func TestREQ_CORE_007_Formatters(t *testing.T) {
 		}
 	})
 }
+
+// @spec REQ-CORE-008
+// @spec REQ-CORE-009
+// @spec REQ-CORE-013
+// @spec REQ-CORE-014
+// @spec REQ-CORE-015
+func TestREQ_CORE_008_009_013_014_I18n(t *testing.T) {
+	t.Run("Message formatting across built-in locales", func(t *testing.T) {
+		issue := z.Issue{
+			Code:      z.TooSmall,
+			Origin:    "string",
+			Minimum:   5,
+			Inclusive: true,
+		}
+
+		msgEN := z.LocaleEN.FormatMessage(&issue)
+		if !strings.Contains(msgEN, "at least 5 character(s)") {
+			t.Errorf("unexpected EN message: %q", msgEN)
+		}
+
+		msgPT := z.LocalePtBR.FormatMessage(&issue)
+		if !strings.Contains(msgPT, "no mínimo 5 caractere(s)") {
+			t.Errorf("unexpected PT message: %q", msgPT)
+		}
+
+		msgES := z.LocaleES.FormatMessage(&issue)
+		if !strings.Contains(msgES, "al menos 5 carácter(es)") {
+			t.Errorf("unexpected ES message: %q", msgES)
+		}
+	})
+
+	t.Run("Accept-Language parsing and negotiation", func(t *testing.T) {
+		// Exact match
+		if loc := z.ResolveLocale("pt-BR"); loc != z.LocalePtBR {
+			t.Errorf("expected LocalePtBR, got %v", loc)
+		}
+
+		// Weighted header
+		header := "pt-BR,pt;q=0.9,en;q=0.8"
+		if loc := z.ResolveLocale(header); loc != z.LocalePtBR {
+			t.Errorf("expected LocalePtBR for weighted header, got %v", loc)
+		}
+
+		// Prefix fallback: es-MX -> es
+		if loc := z.ResolveLocale("es-MX"); loc != z.LocaleES {
+			t.Errorf("expected LocaleES for es-MX, got %v", loc)
+		}
+
+		// Unknown tag returns nil
+		if loc := z.ResolveLocale("xx-YY"); loc != nil {
+			t.Errorf("expected nil for unknown locale, got %v", loc)
+		}
+	})
+
+	t.Run("WithLocale derivation", func(t *testing.T) {
+		ctx := context.Background()
+
+		// Unknown language returns ctx unchanged
+		ctxSame := z.WithLocale(ctx, "xx-YY")
+		if ctxSame != ctx {
+			t.Errorf("expected unchanged context for unknown locale")
+		}
+
+		// Valid locale attaches value
+		ctxPT := z.WithLocale(ctx, "pt-BR")
+		val := ctxPT.Value(z.LocaleContextKey)
+		if val != z.LocalePtBR {
+			t.Errorf("expected LocalePtBR attached to context, got %v", val)
+		}
+	})
+
+	t.Run("Custom locale registration", func(t *testing.T) {
+		type customLoc struct{}
+		// test custom locale
+		cl := &testCustomLocale{}
+		z.RegisterLocale("fr", cl)
+
+		if loc := z.ResolveLocale("fr-FR"); loc != cl {
+			t.Errorf("expected custom registered locale cl, got %v", loc)
+		}
+	})
+}
+
+type testCustomLocale struct{}
+
+func (t *testCustomLocale) Tag() string {
+	return "fr"
+}
+
+func (t *testCustomLocale) FormatMessage(issue *z.Issue) string {
+	return "Erreur personnalisée"
+}
+
 

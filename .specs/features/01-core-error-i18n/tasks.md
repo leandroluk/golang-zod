@@ -27,7 +27,7 @@
 - **Done when**: Unit tests asserting formatting output match Zod v4 specification.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_007"`
 
-### TASK-CORE-004: i18n system, catalogs, and Accept-Language negotiation
+### [x] TASK-CORE-004: i18n system, catalogs, and Accept-Language negotiation
 - **REQ**: REQ-CORE-008, REQ-CORE-009, REQ-CORE-013, REQ-CORE-014
 - **Symbols**: Locale, LocaleEN, LocalePtBR, LocaleES, SetLocale, RegisterLocale, WithLocale, getActiveLocale
 - **What**: Implement locale catalogs with message resolvers for all 11 issue codes and sizing origins; thread-safe atomic global default `SetLocale`; locale registry with built-ins `en`, `pt-BR`, `es`; header parsing for `Accept-Language` with q-factor sorting and prefix fallback.
