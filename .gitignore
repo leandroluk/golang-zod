@@ -1,0 +1,26 @@
+# Binaries and build artifacts
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+*.out
+*.test
+coverage.txt
+
+# Go workspace
+go.work
+go.work.sum
+
+# Specs Index
+.specs/.index/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
