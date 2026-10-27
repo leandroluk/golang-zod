@@ -14,6 +14,7 @@ type Meta struct {
 	Description string         `json:"description,omitempty"`
 	Examples    []any          `json:"examples,omitempty"`
 	Deprecated  bool           `json:"deprecated,omitempty"`
+	ReadOnly    bool           `json:"readOnly,omitempty"`
 	Custom      map[string]any `json:"custom,omitempty"`
 }
 
@@ -88,6 +89,13 @@ func (b *MetaBuilder) Describe(desc string) *MetaBuilder {
 // Examples appends example values to the schema metadata.
 func (b *MetaBuilder) Examples(examples ...any) *MetaBuilder {
 	b.meta.Examples = append(b.meta.Examples, examples...)
+	return b
+}
+
+// @spec REQ-CORE-010
+// ReadOnly marks whether the schema is readOnly.
+func (b *MetaBuilder) ReadOnly(ro bool) *MetaBuilder {
+	b.meta.ReadOnly = ro
 	return b
 }
 
