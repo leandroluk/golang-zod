@@ -24,3 +24,5 @@ go.work.sum
 Thumbs.db
 .idea/
 .vscode/
+.specs/.cache/
+.specs/.memory/notes/

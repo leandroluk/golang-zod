@@ -20,4 +20,5 @@
 - None.
 
 ## Cost
-- Initial index sync pending.
+- Initial index sync: `added=9 modified=0 deleted=0` (nexspec format 9).
+

@@ -1,0 +1,4 @@
+# >>> nexspec >>>
+# Versioned graph exports merge as a union of nodes and edges.
+*.graph.json merge=nexspec
+# <<< nexspec <<<
