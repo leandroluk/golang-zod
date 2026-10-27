@@ -9,7 +9,7 @@
 - **Done when**: Unit tests for Option and Nullable pass including JSON marshaling and unmarshaling.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_004"`
 
-### TASK-CORE-002: Error taxonomy, issues, and ZodError
+### [x] TASK-CORE-002: Error taxonomy, issues, and ZodError
 - **REQ**: REQ-CORE-005, REQ-CORE-006
 - **Symbols**: IssueCode, PathSegment, Issue, ZodError
 - **What**: Define the 11 `IssueCode` constants, `PathSegment` (key/index), `Issue` struct containing code-specific fields matching Zod v4, and `*ZodError` implementing `error` and `Issues() []Issue`.
@@ -18,7 +18,7 @@
 - **Done when**: Unit tests verifying issue codes, issue fields, and ZodError error interface pass.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_005|TestREQ_CORE_006"`
 
-### TASK-CORE-003: Error formatters Flatten, Treeify, Prettify
+### [x] TASK-CORE-003: Error formatters Flatten, Treeify, Prettify
 - **REQ**: REQ-CORE-007
 - **Symbols**: Flatten, Treeify, Prettify, FlattenedErrors, ErrorTreeNode
 - **What**: Implement `Flatten` (first-segment field keys, form errors), `Treeify` (tree structure with properties/items), and `Prettify` (formatted string with path and mark).

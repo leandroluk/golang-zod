@@ -7,8 +7,8 @@ Specification phase complete for all 9 features (mirrors `rust-zod`: 01 core/err
 
 ## Todos
 - [x] TASK-CORE-001: Option and Nullable presence types — Execute phase
-- [ ] TASK-CORE-002: Error taxonomy, issues, and ZodError — Execute phase
-- [ ] TASK-CORE-003: Error formatters Flatten, Treeify, Prettify — Execute phase
+- [x] TASK-CORE-002: Error taxonomy, issues, and ZodError — Execute phase
+- [x] TASK-CORE-003: Error formatters Flatten, Treeify, Prettify — Execute phase
 - [ ] TASK-CORE-004: i18n system, catalogs, and Accept-Language negotiation — Execute phase
 - [ ] TASK-CORE-005: Metadata and MetaBuilder — Execute phase
 - [ ] TASK-CORE-006: Untyped execution engine and parse context pool — Execute phase
@@ -48,6 +48,7 @@ Specification phase complete for all 9 features (mirrors `rust-zod`: 01 core/err
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-27] TASK-CORE-002 and TASK-CORE-003 complete: 11 IssueCodes, PathSegment, Issue matching Zod v4, ZodError, and Flatten/Treeify/Prettify formatters. Gate: 7/7 pass. [REQ-CORE-005] [REQ-CORE-006] [REQ-CORE-007]
 - [2026-10-27] TASK-CORE-001 complete: Option[T] and Nullable[T] presence types implemented with json/v2 streaming support. Gate: 5/5 pass. [REQ-CORE-004]
 - [2026-10-27] INSIGHT.md rewritten and validated against go1.27.1; all `.specs` (project, codebase, 9 features) rewritten to match.
 
