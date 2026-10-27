@@ -1,0 +1,81 @@
+# GraphQL SDL Generator
+
+`golang-zod` includes an exporter that compiles schemas into standard GraphQL Schema Definition Language (SDL) strings.
+
+## Exporting GraphQL SDL (`z.ToGraphQLSDL`)
+
+```go
+roleEnum := z.Enum("ADMIN", "MEMBER", "GUEST").Meta(func(m *z.MetaBuilder) {
+	m.ID("Role")
+})
+
+userSchema := z.Object(func(s *z.Shape) {
+	s.Field("id", z.UUID())
+	s.Field("name", z.String())
+	s.Field("email", z.Email())
+	s.Field("role", roleEnum)
+	s.Field("bio", z.String().Optional())
+	s.Field("skills", z.Array(z.String()))
+}).Meta(func(m *z.MetaBuilder) {
+	m.ID("User")
+})
+
+sdl, err := z.ToGraphQLSDL(userSchema)
+if err != nil {
+	panic(err)
+}
+
+fmt.Println(sdl)
+```
+
+### Output:
+
+```graphql
+enum Role {
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+type User {
+  id: String!
+  name: String!
+  email: String!
+  role: Role!
+  bio: String
+  skills: [String!]!
+}
+```
+
+---
+
+## Key Rules & Invariants
+
+### 1. Inverted Nullability
+
+GraphQL fields are nullable by default. `golang-zod` mirrors Zod v4's inverted nullability:
+- Required fields emit the non-null modifier `!`.
+- `.Optional()`, `.Nullable()`, and `.Nullish()` fields emit standard nullable types without `!`.
+- Array elements are non-null by default: `[String!]!`.
+
+### 2. Input Types (`GraphQLInput()`)
+
+To generate GraphQL `input` definitions rather than `type`:
+
+```go
+inputSDL, err := z.ToGraphQLSDL(userSchema, z.GraphQLInput())
+```
+
+Emits:
+
+```graphql
+input User {
+  id: String!
+  name: String!
+  ...
+}
+```
+
+### 3. Custom Scalars
+
+Primitives like `z.Date()`, `z.BigInt()`, and `z.Bytes()` automatically declare their respective GraphQL custom scalar definitions (`scalar DateTime`, `scalar BigInt`, `scalar Bytes`).

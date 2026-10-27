@@ -3,14 +3,14 @@
 **Last Updated:** 2026-10-27
 
 ## Current Work
-Milestones 1–7 complete. Building comprehensive Docsify documentation site matching `rust-zod/docs`.
+All 7 Milestones (M1–M7) and complete Docsify documentation site successfully implemented, tested with -race (96/96 tests pass), benchmarked, and synchronized.
 
 ## Todos
 - [x] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
 - [x] Implement M5 `06-modifiers-refinements-pipelines`
 - [x] Implement M6 `07-json-schema-openapi`, `08-graphql-builder`
 - [x] Implement M7 `09-optimizations`
-- [ ] Build complete Docsify documentation site matching `rust-zod/docs`
+- [x] Build complete Docsify documentation site matching `rust-zod/docs`
 
 ## Active Blockers
 - none
@@ -39,6 +39,7 @@ Milestones 1–7 complete. Building comprehensive Docsify documentation site mat
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-27] Docs complete: Created full Docsify documentation site mirroring `rust-zod/docs` with index.html, _sidebar.md, README.md, guides (Getting Started, Primitives & Formats, Objects & Structs, Type Conversion, Codecs & Pipelines, Error Handling & i18n, JSON Schema & OpenAPI, GraphQL SDL), examples (Web API Payload, Bidirectional Codecs), and assets.
 - [2026-10-27] Milestone 7 (09-optimizations) complete: Inline path stack with [8]PathSegment and zero allocations for shallow paths, spill support for 12+ levels, sync.Pool isolation test under 10 000 concurrent iterations, Struct.ParseTo destination reuse, benchmarks for primitives, email, object, struct. Gate: 96/96 pass with -race. [REQ-OPT-001]..[REQ-OPT-007]
 - [2026-10-27] Milestone 6 (07-json-schema-openapi, 08-graphql-builder) complete: ToJSONSchema (Draft 2020-12, Draft 07, Draft 04, OpenAPI 3.0/3.1, IO Input/Output, Unrepresentable, Cycle detection, $defs deduplication), FromJSONSchema with dynamic reconstruction, ToGraphQLSDL (types, inputs, enums, unions, custom scalars, inverted nullability, recursive cycle prevention, unsupported tuple validation). Gate: 94/94 pass with -race. [REQ-EXP-001]..[REQ-EXP-007] [REQ-GQL-001]..[REQ-GQL-005]
 - [2026-10-27] Milestone 5 (06-modifiers-refinements-pipelines) complete: Fallback modifiers (Default, Prefault, Catch, Readonly), Refinements (Check, Refine, SuperRefine, RefineCtx with cancellation), Pipelines (Transform, Pipe, Preprocess), Codec with Encode/DecodeValue/ErrEncodeUnsupported, StringBool with options, recipe codecs (JSONString, Base64Bytes, StringInt, StringNumber, EpochDate). Gate: 86/86 pass with -race. [REQ-PIPE-001]..[REQ-PIPE-009]
