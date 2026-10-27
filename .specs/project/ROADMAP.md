@@ -29,9 +29,9 @@
   - `z.Literal(...)`.
   - `z.Coerce.*` (`String`, `Number`, `Int`, `Boolean`, `BigInt`, `Date`).
 
-## Milestone 3: Options (Enums) & Collections (`M3-options-collections`)
-- **Feature 03 (`03-options-collections`)**:
-  - `z.Options(...)` and `z.OptionsSlice(...)` with `.Options()`, `.Extract(...)`, `.Exclude(...)`.
+## Milestone 3: Enums & Collections (`M3-enums-collections`)
+- **Feature 03 (`03-enums-collections`)**:
+  - `z.Enum(...)` com suporte variádico nativo (`z.Enum("a", "b")` ou `z.Enum(slice...)`) e métodos `.Values()`, `.Extract(...)`, `.Exclude(...)`.
   - `z.Array(schema)` (`Min`, `Max`, `Length`, `NonEmpty`, `Unique`, `Unwrap`).
   - `z.Tuple(...)` with `.Rest(schema)` and `.Partial()`.
   - `z.Set(schema)` and `z.Map(key_schema, value_schema)`.

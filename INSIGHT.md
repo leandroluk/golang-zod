@@ -37,12 +37,24 @@ Construtores diretos alinhados aos tipos primitivos do Go:
 * `z.LooseObject(z.Shape{...})`: preserva chaves desconhecidas (substitui o antigo `.passthrough()`).
 * Extensão de schemas via `.Extend(z.Shape{...})` (substitui o antigo `.merge()`).
 
-### 1.4. `z.Options(...)` para Enums
-Em Go, enums são representados por tipos primitivos com `iota`. O Zod v4 padronizou `z.options`:
+### 1.4. `z.Enum(...)` Idêntico ao Zod Original
+Diferente do Rust (onde `enum` é palavra reservada da linguagem), em Go **`enum` não é palavra reservada**. Além disso, Go possui parâmetros variádicos nativos (`...T`), dispensando qualquer sufixo como `Slice`:
+
 ```go
-roleSchema := z.Options("admin", "user", "guest")
-// ou via slice:
-statusSchema := z.OptionsSlice([]string{"pending", "approved", "rejected"})
+// Uma única função variádica resolve tudo:
+roleSchema := z.Enum("admin", "user", "guest")
+
+// Se tiver um slice existente, usa o desempacotamento nativo do Go (...):
+roles := []string{"admin", "user", "guest"}
+roleSchema := z.Enum(roles...)
+
+// Ou com tipos definidos (type Role string):
+type Role string
+const (
+    Admin Role = "admin"
+    User  Role = "user"
+)
+typedSchema := z.Enum(Admin, User)
 ```
 
 ---
@@ -158,7 +170,7 @@ Seguindo o Zod v4, o `golang-zod` suporta pipelines bidirecionais seguros:
 | `z.string().email()` | **Cortado** | Top-level no v4: `z.Email()`. |
 | `z.number().int()` | **Cortado** | Top-level no v4: `z.Int()`. |
 | `.passthrough()`, `.merge()` | **Cortado** | Substituídos por `.Loose()` / `z.LooseObject()` e `.Extend()`. |
-| `z.enum([...])` | **Renomeado para `z.Options(...)`** | `enum` não existe como palavra-chave no Go; `Options` expressa o conceito com exatidão. |
+| `z.enum([...])` | **Mantido como `z.Enum(...)`** | Em Go `enum` não é palavra reservada, e aceita variádico nativo `...T` (inclusive `slice...`). |
 | `z.instanceof(...)` | **Cortado** | Específico de protótipos JS. |
 | `z.undefined()`, `z.void()`, `z.symbol()` | **Cortado** | Tipos exclusivos do runtime JavaScript. |
 
