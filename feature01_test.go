@@ -404,4 +404,68 @@ func (t *testCustomLocale) FormatMessage(issue *z.Issue) string {
 	return "Erreur personnalisée"
 }
 
+// @spec REQ-CORE-010
+func TestREQ_CORE_010_Meta(t *testing.T) {
+	t.Run("MetaBuilder chaining and merging", func(t *testing.T) {
+		b := z.NewMetaBuilder(z.Meta{})
+		b.ID("UserSchema").
+			Title("User Model").
+			Describe("Represents an authenticated user").
+			Examples(map[string]any{"name": "Alice"}).
+			Deprecated(false).
+			Custom("version", 1)
+
+		m1 := b.Build()
+		if m1.ID != "UserSchema" || m1.Title != "User Model" || m1.Description != "Represents an authenticated user" {
+			t.Errorf("unexpected m1: %+v", m1)
+		}
+		if len(m1.Examples) != 1 || m1.Custom["version"] != 1 {
+			t.Errorf("unexpected examples or custom in m1: %+v", m1)
+		}
+
+		// Subsequent builder call starts from m1 and merges by default
+		b2 := z.NewMetaBuilder(m1)
+		b2.Describe("Updated description").
+			Examples(map[string]any{"name": "Bob"})
+
+		m2 := b2.Build()
+		if m2.ID != "UserSchema" || m2.Title != "User Model" {
+			t.Errorf("ID and Title should be preserved: %+v", m2)
+		}
+		if m2.Description != "Updated description" {
+			t.Errorf("Description should be updated: %s", m2.Description)
+		}
+		if len(m2.Examples) != 2 {
+			t.Errorf("Examples should merge: got %d examples", len(m2.Examples))
+		}
+
+		// Reset clears all
+		b2.Reset()
+		mReset := b2.Build()
+		if mReset.ID != "" || mReset.Title != "" || len(mReset.Examples) != 0 {
+			t.Errorf("Reset should clear all metadata: %+v", mReset)
+		}
+	})
+
+	t.Run("Duplicate non-empty ID panics", func(t *testing.T) {
+		owner1 := &struct{ name string }{"schema1"}
+		owner2 := &struct{ name string }{"schema2"}
+
+		z.RegisterSchemaID("UniqueUser", owner1)
+		// Registering again for owner1 should not panic
+		z.RegisterSchemaID("UniqueUser", owner1)
+
+		// Registering for owner2 must panic
+		defer func() {
+			r := recover()
+			if r == nil {
+				t.Errorf("expected panic on duplicate schema ID, but did not panic")
+			}
+		}()
+
+		z.RegisterSchemaID("UniqueUser", owner2)
+	})
+}
+
+
 

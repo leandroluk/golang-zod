@@ -36,7 +36,7 @@
 - **Done when**: Messages correctly format in EN, pt-BR, and ES, and Accept-Language negotiation chooses the correct locale.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_008|TestREQ_CORE_009|TestREQ_CORE_013|TestREQ_CORE_014"`
 
-### TASK-CORE-005: Metadata and MetaBuilder
+### [x] TASK-CORE-005: Metadata and MetaBuilder
 - **REQ**: REQ-CORE-010
 - **Symbols**: Meta, MetaBuilder
 - **What**: Implement `Meta` struct, `MetaBuilder` with chainable setter methods (`ID`, `Title`, `Describe`, `Examples`, `Deprecated`, `Custom`, `Reset`), and construction-time check ensuring duplicate non-empty IDs panic.
