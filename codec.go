@@ -30,6 +30,9 @@ type codecNode[A, B any] struct {
 }
 
 func (n *codecNode[A, B]) kind() nodeKind { return kindCodec }
+func (n *codecNode[A, B]) Schemas() (AnySchema, AnySchema) {
+	return n.schema.inSchema, n.schema.outSchema
+}
 
 func (n *codecNode[A, B]) parse(ctx *parseCtx, in any) (any, bool) {
 	if err := ctx.checkCancel(); err != nil {

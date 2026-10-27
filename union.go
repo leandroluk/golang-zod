@@ -41,6 +41,14 @@ func (n *unionNode) kind() nodeKind {
 	}
 }
 
+func (n *unionNode) Options() []AnySchema {
+	return n.schema.options
+}
+
+func (n *unionNode) Discriminator() string {
+	return n.schema.discriminator
+}
+
 func (n *unionNode) parse(ctx *parseCtx, in any) (any, bool) {
 	if err := ctx.checkCancel(); err != nil {
 		return nil, false

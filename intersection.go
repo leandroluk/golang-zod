@@ -22,6 +22,7 @@ type intersectionNode struct {
 }
 
 func (n *intersectionNode) kind() nodeKind { return kindIntersection }
+func (n *intersectionNode) Operands() (AnySchema, AnySchema) { return n.schema.left, n.schema.right }
 func (n *intersectionNode) parse(ctx *parseCtx, in any) (any, bool) {
 	if err := ctx.checkCancel(); err != nil {
 		return nil, false

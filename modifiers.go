@@ -9,10 +9,12 @@ type OptionalSchema[T any] struct {
 }
 
 type optionalNode[T any] struct {
-	inner node
+	inner  node
+	schema AnySchema
 }
 
 func (n *optionalNode[T]) kind() nodeKind { return kindOptional }
+func (n *optionalNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *optionalNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		// When input is nil in direct parse, Optional rejects null per Zod v4 unless Nullable
@@ -35,7 +37,7 @@ func (n *optionalNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 
 // NewOptionalSchema creates an OptionalSchema wrapping inner.
 func NewOptionalSchema[T any](inner Schema[T]) OptionalSchema[T] {
-	node := &optionalNode[T]{inner: inner.node()}
+	node := &optionalNode[T]{inner: inner.node(), schema: inner}
 	return OptionalSchema[T]{
 		BaseSchema: NewBaseSchema[Option[T]](node),
 		inner:      inner,
@@ -56,10 +58,12 @@ type NullableSchema[T any] struct {
 }
 
 type nullableNode[T any] struct {
-	inner node
+	inner  node
+	schema AnySchema
 }
 
 func (n *nullableNode[T]) kind() nodeKind { return kindNullable }
+func (n *nullableNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *nullableNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		return NullableNull[T](), true
@@ -76,7 +80,7 @@ func (n *nullableNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 
 // NewNullableSchema creates a NullableSchema wrapping inner.
 func NewNullableSchema[T any](inner Schema[T]) NullableSchema[T] {
-	node := &nullableNode[T]{inner: inner.node()}
+	node := &nullableNode[T]{inner: inner.node(), schema: inner}
 	return NullableSchema[T]{
 		BaseSchema: NewBaseSchema[Nullable[T]](node),
 		inner:      inner,
@@ -97,10 +101,12 @@ type NullishSchema[T any] struct {
 }
 
 type nullishNode[T any] struct {
-	inner node
+	inner  node
+	schema AnySchema
 }
 
 func (n *nullishNode[T]) kind() nodeKind { return kindNullish }
+func (n *nullishNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *nullishNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		return Some(NullableNull[T]()), true
@@ -117,7 +123,7 @@ func (n *nullishNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 
 // NewNullishSchema creates a NullishSchema wrapping inner.
 func NewNullishSchema[T any](inner Schema[T]) NullishSchema[T] {
-	node := &nullishNode[T]{inner: inner.node()}
+	node := &nullishNode[T]{inner: inner.node(), schema: inner}
 	return NullishSchema[T]{
 		BaseSchema: NewBaseSchema[Option[Nullable[T]]](node),
 		inner:      inner,
@@ -140,10 +146,12 @@ type DefaultSchema[T any] struct {
 
 type defaultNode[T any] struct {
 	inner     node
+	schema    AnySchema
 	defaultFn func() T
 }
 
 func (n *defaultNode[T]) kind() nodeKind { return kindDefault }
+func (n *defaultNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *defaultNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		return n.defaultFn(), true
@@ -158,7 +166,7 @@ func NewDefaultSchema[T any](inner Schema[T], defaultValue T) DefaultSchema[T] {
 
 // NewDefaultFuncSchema creates a DefaultSchema wrapping inner with a dynamic fallback supplier.
 func NewDefaultFuncSchema[T any](inner Schema[T], fn func() T) DefaultSchema[T] {
-	node := &defaultNode[T]{inner: inner.node(), defaultFn: fn}
+	node := &defaultNode[T]{inner: inner.node(), schema: inner, defaultFn: fn}
 	return DefaultSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,

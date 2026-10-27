@@ -58,6 +58,10 @@ type objectNode struct {
 }
 
 func (n *objectNode) kind() nodeKind { return kindObject }
+func (n *objectNode) FieldNames() []string { return n.schema.FieldNames() }
+func (n *objectNode) FieldSchema(name string) AnySchema { return n.schema.FieldSchema(name) }
+func (n *objectNode) Mode() unknownKeysMode { return n.schema.mode }
+func (n *objectNode) CatchallSchema() AnySchema { return n.schema.catchallSch }
 func (n *objectNode) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		ctx.addIssue(Issue{
@@ -438,7 +442,7 @@ func makeAnyOptional(s AnySchema) AnySchema {
 	if s.node().kind() == kindOptional {
 		return s
 	}
-	opt := &optionalNode[any]{inner: s.node()}
+	opt := &optionalNode[any]{inner: s.node(), schema: s}
 	return &anyOptionalWrapper{inner: s, opt: opt}
 }
 

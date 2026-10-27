@@ -26,6 +26,10 @@ func (n *lazyNode[T]) kind() nodeKind {
 	return kindLazy
 }
 
+func (n *lazyNode[T]) Resolve() AnySchema {
+	return n.memo()
+}
+
 func (n *lazyNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if err := ctx.checkCancel(); err != nil {
 		return nil, false

@@ -15,6 +15,7 @@ type arrayNode[T any] struct {
 }
 
 func (n *arrayNode[T]) kind() nodeKind { return kindArray }
+func (n *arrayNode[T]) Element() AnySchema { return n.schema.element }
 func (n *arrayNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		ctx.addIssue(Issue{

@@ -16,6 +16,13 @@ type enumNode[T ~string] struct {
 }
 
 func (n *enumNode[T]) kind() nodeKind { return kindEnum }
+func (n *enumNode[T]) Values() []string {
+	strs := make([]string, len(n.schema.values))
+	for i, v := range n.schema.values {
+		strs[i] = string(v)
+	}
+	return strs
+}
 func (n *enumNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	str, ok := in.(string)
 	if !ok {
