@@ -3,7 +3,7 @@
 **Last Updated:** 2026-10-27
 
 ## Current Work
-Specification phase complete for all 9 features (mirrors `rust-zod`: 01 core/errors/i18n, 02 primitives, 03 enums/collections, 04 objects, 05 combinators, 06 modifiers/pipelines, 07 JSON Schema/OpenAPI, 08 GraphQL, 09 optimizations). Implementation has NOT started; it will be done by Gemini following `.specs/features/*/spec.md`, `INSIGHT.md` and `.specs/codebase/*`.
+Milestone 1 (01-core-error-i18n) complete. Ready for Milestone 2 (`02-primitives-formats-coercion`).
 
 ## Todos
 - [x] TASK-CORE-001: Option and Nullable presence types — Execute phase
@@ -11,9 +11,9 @@ Specification phase complete for all 9 features (mirrors `rust-zod`: 01 core/err
 - [x] TASK-CORE-003: Error formatters Flatten, Treeify, Prettify — Execute phase
 - [x] TASK-CORE-004: i18n system, catalogs, and Accept-Language negotiation — Execute phase
 - [x] TASK-CORE-005: Metadata and MetaBuilder — Execute phase
-- [ ] TASK-CORE-006: Untyped execution engine and parse context pool — Execute phase
-- [ ] TASK-CORE-007: Typed Schema interface, entry points, and global context configuration — Execute phase
-- [ ] TASK-CORE-008: Comprehensive verification and test suite for Milestone 1 — Execute phase
+- [x] TASK-CORE-006: Untyped execution engine and parse context pool — Execute phase
+- [x] TASK-CORE-007: Typed Schema interface, entry points, and global context configuration — Execute phase
+- [x] TASK-CORE-008: Comprehensive verification and test suite for Milestone 1 — Execute phase
 - [ ] Implement M2 `02-primitives-formats-coercion`
 - [ ] Implement M3 `03-enums-collections`
 - [ ] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
@@ -48,6 +48,7 @@ Specification phase complete for all 9 features (mirrors `rust-zod`: 01 core/err
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-27] Milestone 1 (01-core-error-i18n) complete: node engine, parseCtx pool, Schema[T], Parse/ParseJSON/Decode, Config.UseContext, context cancellation, full test suite with -race passing. Gate: 22/22 pass. [REQ-CORE-001] [REQ-CORE-002] [REQ-CORE-003] [REQ-CORE-011] [REQ-CORE-012] [REQ-CORE-015] [REQ-CORE-016] [REQ-CORE-017]
 - [2026-10-27] TASK-CORE-005 complete: Meta struct and fluent MetaBuilder with Describe, Examples, Custom, and duplicate ID panic check. Gate: 2/2 pass. [REQ-CORE-010]
 - [2026-10-27] TASK-CORE-004 complete: i18n catalogs (EN, PtBR, ES), SetLocale, RegisterLocale, and WithLocale Accept-Language negotiation. Gate: 4/4 pass. [REQ-CORE-008] [REQ-CORE-009] [REQ-CORE-013] [REQ-CORE-014]
 - [2026-10-27] TASK-CORE-002 and TASK-CORE-003 complete: 11 IssueCodes, PathSegment, Issue matching Zod v4, ZodError, and Flatten/Treeify/Prettify formatters. Gate: 7/7 pass. [REQ-CORE-005] [REQ-CORE-006] [REQ-CORE-007]

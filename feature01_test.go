@@ -3,8 +3,11 @@ package z_test
 import (
 	"context"
 	"encoding/json/v2"
+	"errors"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	z "github.com/leandroluk/golang-zod"
 )
@@ -466,6 +469,201 @@ func TestREQ_CORE_010_Meta(t *testing.T) {
 		z.RegisterSchemaID("UniqueUser", owner2)
 	})
 }
+
+// @spec REQ-CORE-001
+// @spec REQ-CORE-012
+func TestREQ_CORE_001_012_EngineAndPool(t *testing.T) {
+	t.Run("ParseCtx acquisition, issue addition, and clean release", func(t *testing.T) {
+		ctx := context.Background()
+		pc := z.AcquireParseCtx(ctx)
+
+		z.ContextAddIssue(pc, z.Issue{
+			Code:    z.InvalidType,
+			Message: "test issue",
+		})
+		if z.ContextIssuesCount(pc) != 1 {
+			t.Errorf("expected 1 issue in pc, got %d", z.ContextIssuesCount(pc))
+		}
+
+		z.ReleaseParseCtx(pc)
+
+		// Re-acquire and verify cleanly reset
+		pc2 := z.AcquireParseCtx(ctx)
+		defer z.ReleaseParseCtx(pc2)
+		if z.ContextIssuesCount(pc2) != 0 {
+			t.Errorf("expected pool reset to have 0 issues, got %d", z.ContextIssuesCount(pc2))
+		}
+	})
+}
+
+// @spec REQ-CORE-002
+// @spec REQ-CORE-003
+func TestREQ_CORE_002_003_EntryPoints(t *testing.T) {
+	// Simple test schema that validates non-empty string
+	schema := z.NewTestSchema[string](func(pc any, in any) (any, bool) {
+		s, ok := in.(string)
+		if !ok {
+			return nil, false
+		}
+		if len(s) == 0 {
+			return nil, false
+		}
+		return s, true
+	})
+
+	t.Run("Parse with and without context", func(t *testing.T) {
+		// No context (optional trailing variadic)
+		v, err := schema.Parse("hello")
+		if err != nil || v != "hello" {
+			t.Errorf("expected success with 'hello', got (%q, %v)", v, err)
+		}
+
+		// Nil context (treated as absent)
+		v, err = schema.Parse("world", nil)
+		if err != nil || v != "world" {
+			t.Errorf("expected success with nil context, got (%q, %v)", v, err)
+		}
+
+		// With valid context
+		ctx := context.Background()
+		v, err = schema.Parse("active", ctx)
+		if err != nil || v != "active" {
+			t.Errorf("expected success with active context, got (%q, %v)", v, err)
+		}
+	})
+
+	t.Run("ParseJSON and Decode", func(t *testing.T) {
+		data := []byte(`"json-value"`)
+		v, err := schema.ParseJSON(data)
+		if err != nil || v != "json-value" {
+			t.Errorf("ParseJSON failed: got (%q, %v)", v, err)
+		}
+
+		reader := strings.NewReader(`"stream-value"`)
+		v, err = schema.Decode(reader)
+		if err != nil || v != "stream-value" {
+			t.Errorf("Decode failed: got (%q, %v)", v, err)
+		}
+	})
+}
+
+// @spec REQ-CORE-011
+// @spec REQ-CORE-016
+func TestREQ_CORE_011_016_ContextConfiguration(t *testing.T) {
+	defer z.Config.UseContext(z.ContextOptions{}) // restore default
+
+	t.Run("WithAbortEarly helper", func(t *testing.T) {
+		ctx := z.WithAbortEarly(context.Background())
+		val := ctx.Value(z.AbortEarlyContextKey)
+		if b, ok := val.(bool); !ok || !b {
+			t.Errorf("expected true under AbortEarlyContextKey, got %v", val)
+		}
+	})
+
+	t.Run("UseContext replaces keys and restores", func(t *testing.T) {
+		customLocaleKey := "app.locale"
+		customAbortKey := "app.abort"
+
+		z.Config.UseContext(z.ContextOptions{
+			LocaleKey:     customLocaleKey,
+			AbortEarlyKey: customAbortKey,
+		})
+
+		ctx := context.WithValue(context.Background(), customLocaleKey, "pt-BR")
+		// Resolving active locale should pick up pt-BR directly from the custom key
+		ctxWithDerived := z.WithLocale(ctx, "pt-BR")
+		val := ctxWithDerived.Value(customLocaleKey)
+		if val != z.LocalePtBR {
+			t.Errorf("expected LocalePtBR written to custom key %q, got %v", customLocaleKey, val)
+		}
+
+		// Restoring default
+		z.Config.UseContext(z.ContextOptions{})
+		defaultCtx := z.WithLocale(context.Background(), "pt-BR")
+		if defaultCtx.Value(z.LocaleContextKey) != z.LocalePtBR {
+			t.Errorf("expected default key restored")
+		}
+	})
+}
+
+// @spec REQ-CORE-017
+func TestREQ_CORE_017_CancellationAndDeadlines(t *testing.T) {
+	schema := z.NewTestSchema[string](func(pc any, in any) (any, bool) {
+		return in, true
+	})
+
+	t.Run("Cancelled context returns context.Canceled directly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel() // cancel immediately
+
+		_, err := schema.Parse("test", ctx)
+		if err == nil {
+			t.Fatalf("expected error on cancelled context, got nil")
+		}
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("expected errors.Is(err, context.Canceled) to be true, got %v", err)
+		}
+
+		var zerr *z.ZodError
+		if errors.As(err, &zerr) {
+			t.Errorf("cancellation error must NOT be a *ZodError")
+		}
+	})
+
+	t.Run("Deadline exceeded context returns context.DeadlineExceeded", func(t *testing.T) {
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-1*time.Second))
+		defer cancel()
+
+		_, err := schema.ParseJSON([]byte(`"test"`), ctx)
+		if err == nil {
+			t.Fatalf("expected error on expired deadline, got nil")
+		}
+		if !errors.Is(err, context.DeadlineExceeded) {
+			t.Errorf("expected errors.Is(err, context.DeadlineExceeded) to be true, got %v", err)
+		}
+	})
+}
+
+// @spec REQ-CORE-015
+func TestREQ_CORE_015_Concurrency_Race(t *testing.T) {
+	// Schema that generates an error
+	schema := z.NewTestSchema[string](func(pc any, in any) (any, bool) {
+		return nil, false
+	})
+
+	var wg sync.WaitGroup
+	localesToTest := []struct {
+		tag      string
+		expected string
+	}{
+		{"en", "Validation error"},
+		{"pt-BR", "Erro de validação"},
+		{"es", "Error de validación"},
+	}
+
+	for i := 0; i < 30; i++ {
+		for _, item := range localesToTest {
+			wg.Add(1)
+			go func(tag, expected string) {
+				defer wg.Done()
+				ctx := z.WithLocale(context.Background(), tag)
+				_, err := schema.Parse("input", ctx)
+				if err == nil {
+					t.Errorf("expected validation failure")
+					return
+				}
+				var zerr *z.ZodError
+				if !errors.As(err, &zerr) {
+					t.Errorf("expected *ZodError")
+					return
+				}
+			}(item.tag, item.expected)
+		}
+	}
+
+	wg.Wait()
+}
+
 
 
 

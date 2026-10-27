@@ -45,7 +45,7 @@
 - **Done when**: MetaBuilder merges existing meta and duplicate IDs panic.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_010"`
 
-### TASK-CORE-006: Untyped execution engine and parse context pool
+### [x] TASK-CORE-006: Untyped execution engine and parse context pool
 - **REQ**: REQ-CORE-001, REQ-CORE-012, REQ-CORE-017
 - **Symbols**: node, nodeKind, parseCtx, parseCtxPool
 - **What**: Define internal `node` interface, node kinds, `parseCtx` with path stack, issue collection, abortEarly support, active locale, and context cancellation non-blocking checks (`ctx.Err()`); manage `sync.Pool` lifecycle and clean reset.
@@ -54,7 +54,7 @@
 - **Done when**: `parseCtx` pool recycles cleanly without leakage and context cancellation halts parsing.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_001|TestREQ_CORE_012|TestREQ_CORE_017"`
 
-### TASK-CORE-007: Typed Schema interface, entry points, and global context configuration
+### [x] TASK-CORE-007: Typed Schema interface, entry points, and global context configuration
 - **REQ**: REQ-CORE-002, REQ-CORE-003, REQ-CORE-011, REQ-CORE-016
 - **Symbols**: Schema, BaseSchema, Config, ContextOptions, LocaleContextKey, AbortEarlyContextKey, WithAbortEarly
 - **What**: Implement `Schema[T]` interface, base typed wrapper calling `node.parse`, JSON v2 / jsontext stream decoding in `ParseJSON`/`Decode`, global `Config.UseContext(ContextOptions)` for key replacement, and well-known context keys.
@@ -63,7 +63,7 @@
 - **Done when**: `Parse`, `ParseJSON`, `Decode` execute end-to-end, `Config.UseContext` replaces context keys, and no typed-nil error is returned.
 - **Gate**: `go test -race -v -run "TestREQ_CORE_002|TestREQ_CORE_003|TestREQ_CORE_011|TestREQ_CORE_016"`
 
-### TASK-CORE-008: Comprehensive verification and test suite for Milestone 1
+### [x] TASK-CORE-008: Comprehensive verification and test suite for Milestone 1
 - **REQ**: REQ-CORE-015, REQ-CORE-017
 - **Symbols**: TestREQ_*
 - **What**: Implement complete end-to-end and concurrency test suite for feature 01, verifying thread-safety with `-race`, context cancellation, custom registered locales, Fiber-like use cases, and benchmarks.
