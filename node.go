@@ -103,9 +103,6 @@ func acquireParseCtx(ctx context.Context) *parseCtx {
 
 // releaseParseCtx resets and returns the parseCtx to the pool.
 func releaseParseCtx(pc *parseCtx) {
-	if pc == nil {
-		return
-	}
 	pc.ctx = nil
 	pc.locale = nil
 	pc.abortEarly = false
@@ -137,10 +134,8 @@ func (c *parseCtx) popPath() {
 	}
 }
 
+// currentPath returns a copy of the current path; callers guarantee pathLen > 0.
 func (c *parseCtx) currentPath() []PathSegment {
-	if c.pathLen == 0 {
-		return nil
-	}
 	res := make([]PathSegment, c.pathLen)
 	inlineCount := min(c.pathLen, len(c.pathInline))
 	copy(res, c.pathInline[:inlineCount])

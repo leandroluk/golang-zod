@@ -7,25 +7,23 @@ import (
 
 // @spec REQ-EXP-005
 // FromJSONSchema dynamically reconstructs a schema from a JSON Schema specification.
+// Unsupported or unknown constructs degrade to z.Any() rather than failing; only malformed JSON is an error.
 func FromJSONSchema(data []byte) (Schema[any], error) {
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("golang-zod: failed to unmarshal JSON Schema: %w", err)
 	}
 
-	sch, err := parseJSONSchemaMap(raw)
-	if err != nil {
-		return nil, err
-	}
+	sch := parseJSONSchemaMap(raw)
 
 	res := NewBaseSchema[any](sch.node())
 	res.SetMeta(sch.GetMeta())
 	return res, nil
 }
 
-func parseJSONSchemaMap(raw map[string]any) (AnySchema, error) {
+func parseJSONSchemaMap(raw map[string]any) AnySchema {
 	if constVal, hasConst := raw["const"]; hasConst {
-		return Literal(constVal), nil
+		return Literal(constVal)
 	}
 
 	if enumVals, hasEnum := raw["enum"].([]any); hasEnum {
@@ -36,7 +34,7 @@ func parseJSONSchemaMap(raw map[string]any) (AnySchema, error) {
 			}
 		}
 		if len(strVals) == len(enumVals) {
-			return Enum(strVals...), nil
+			return Enum(strVals...)
 		}
 	}
 
@@ -44,81 +42,55 @@ func parseJSONSchemaMap(raw map[string]any) (AnySchema, error) {
 		var opts []AnySchema
 		for _, o := range oneOf {
 			if oMap, ok := o.(map[string]any); ok {
-				sub, err := parseJSONSchemaMap(oMap)
-				if err != nil {
-					return nil, err
-				}
-				opts = append(opts, sub)
+				opts = append(opts, parseJSONSchemaMap(oMap))
 			}
 		}
-		return Union(opts...), nil
+		return Union(opts...)
 	}
 
-	if allOf, hasAllOf := raw["allOf"].([]any); hasAllOf {
-		if len(allOf) == 2 {
-			lMap, lOk := allOf[0].(map[string]any)
-			rMap, rOk := allOf[1].(map[string]any)
-			if lOk && rOk {
-				left, err := parseJSONSchemaMap(lMap)
-				if err != nil {
-					return nil, err
-				}
-				right, err := parseJSONSchemaMap(rMap)
-				if err != nil {
-					return nil, err
-				}
-				return Intersection(left, right), nil
-			}
+	if allOf, hasAllOf := raw["allOf"].([]any); hasAllOf && len(allOf) == 2 {
+		lMap, lOk := allOf[0].(map[string]any)
+		rMap, rOk := allOf[1].(map[string]any)
+		if lOk && rOk {
+			return Intersection(parseJSONSchemaMap(lMap), parseJSONSchemaMap(rMap))
 		}
 	}
 
-	tVal, hasType := raw["type"]
-	if !hasType {
-		return Any(), nil
-	}
-
-	switch t := tVal.(type) {
+	switch t := raw["type"].(type) {
 	case string:
 		switch t {
 		case "string":
-			return String(), nil
+			return String()
 		case "integer":
-			return Int(), nil
+			return Int()
 		case "number":
-			return Float64(), nil
+			return Float64()
 		case "boolean":
-			return Boolean(), nil
+			return Boolean()
 		case "array":
 			if items, ok := raw["items"].(map[string]any); ok {
-				elem, err := parseJSONSchemaMap(items)
-				if err != nil {
-					return nil, err
-				}
+				elem := parseJSONSchemaMap(items)
 				elemSch := NewBaseSchema[any](elem.node())
 				elemSch.SetMeta(elem.GetMeta())
-				return Array[any](elemSch), nil
+				return Array[any](elemSch)
 			}
-			return Array[any](Any()), nil
+			return Array[any](Any())
 		case "object":
 			return parseObjectSchemaFromMap(raw)
 		}
 	case []any:
-		// Nullable type representation, e.g. ["string", "null"]
+		// Nullable type representation, e.g. ["string", "null"]: the first non-null type wins.
 		for _, subType := range t {
 			if subStr, ok := subType.(string); ok && subStr != "null" {
-				inner, err := parseJSONSchemaMap(map[string]any{"type": subStr})
-				if err != nil {
-					return nil, err
-				}
-				return inner, nil
+				return parseJSONSchemaMap(map[string]any{"type": subStr})
 			}
 		}
 	}
 
-	return Any(), nil
+	return Any()
 }
 
-func parseObjectSchemaFromMap(raw map[string]any) (AnySchema, error) {
+func parseObjectSchemaFromMap(raw map[string]any) AnySchema {
 	props, _ := raw["properties"].(map[string]any)
 	reqSlice, _ := raw["required"].([]any)
 	requiredMap := make(map[string]struct{})
@@ -131,21 +103,19 @@ func parseObjectSchemaFromMap(raw map[string]any) (AnySchema, error) {
 	obj := Object(func(s *Shape) {
 		for k, v := range props {
 			if pMap, ok := v.(map[string]any); ok {
-				fieldSch, err := parseJSONSchemaMap(pMap)
-				if err == nil {
-					if _, isReq := requiredMap[k]; !isReq {
-						s.Field(k, makeAnyOptional(fieldSch))
-					} else {
-						s.Field(k, fieldSch)
-					}
+				fieldSch := parseJSONSchemaMap(pMap)
+				if _, isReq := requiredMap[k]; !isReq {
+					s.Field(k, makeAnyOptional(fieldSch))
+				} else {
+					s.Field(k, fieldSch)
 				}
 			}
 		}
 	})
 
 	if addProps, ok := raw["additionalProperties"].(bool); ok && !addProps {
-		return obj.Strict(), nil
+		return obj.Strict()
 	}
 
-	return obj, nil
+	return obj
 }

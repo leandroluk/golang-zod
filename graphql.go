@@ -132,7 +132,6 @@ func (ctx *gqlGenCtx) generateGQL(n node, meta Meta, nameHint string, required b
 			}
 			return formatReq(fmt.Sprintf("[%s]", elemRef), required), nil
 		}
-		return formatReq("[String!]", required), nil
 	case kindObject:
 		objName := nameHint
 		if meta.ID != "" {

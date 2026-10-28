@@ -53,9 +53,7 @@ func decodeJSONToken(dec *jsontext.Decoder, tok jsontext.Token) (any, error) {
 			}
 			obj[key] = v
 		}
-		if _, err := dec.ReadToken(); err != nil {
-			return nil, err
-		}
+		_, _ = dec.ReadToken() // consumes the closing delimiter that PeekKind just reported; it cannot fail
 		return obj, nil
 	default: // '['
 		arr := make([]any, 0)
@@ -70,9 +68,7 @@ func decodeJSONToken(dec *jsontext.Decoder, tok jsontext.Token) (any, error) {
 			}
 			arr = append(arr, v)
 		}
-		if _, err := dec.ReadToken(); err != nil {
-			return nil, err
-		}
+		_, _ = dec.ReadToken() // consumes the closing delimiter that PeekKind just reported; it cannot fail
 		return arr, nil
 	}
 }

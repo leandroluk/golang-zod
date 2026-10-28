@@ -3,6 +3,7 @@ package z
 import (
 	"encoding/json/v2"
 	"fmt"
+	"maps"
 	"slices"
 )
 
@@ -88,8 +89,8 @@ func WithURI(fn func(id string) string) JSONSchemaOption {
 }
 
 type schemaGenCtx struct {
-	opts    JSONSchemaOptions
-	defs    map[string]map[string]any
+	opts     JSONSchemaOptions
+	defs     map[string]map[string]any
 	visiting map[any]string
 }
 
@@ -121,6 +122,14 @@ func ToJSONSchema(s AnySchema, opts ...JSONSchemaOption) ([]byte, error) {
 		return nil, err
 	}
 
+	// A root registered in defs under its own Meta.ID is the very same map: keep a pristine copy in defs so
+	// the root-level keywords added below ($schema, $defs, ...) never leak into the definition.
+	for id, def := range ctx.defs {
+		if fmt.Sprintf("%p", def) == fmt.Sprintf("%p", root) {
+			ctx.defs[id] = maps.Clone(root)
+		}
+	}
+
 	// Add $schema if draft and root is non-empty
 	if len(root) > 0 {
 		switch cfg.Target {
@@ -141,28 +150,6 @@ func ToJSONSchema(s AnySchema, opts ...JSONSchemaOption) ([]byte, error) {
 			defsKey = "components"
 		}
 
-		// Prevent recursive cycle if root was registered in defs
-		for id, def := range ctx.defs {
-			delete(def, "$defs")
-			delete(def, "definitions")
-			delete(def, "components")
-			delete(def, "$schema")
-			ctx.defs[id] = def
-		}
-
-		// If root itself was registered in defs with matching pointer
-		cleanRootDef := make(map[string]any, len(root))
-		for k, v := range root {
-			if k != "$schema" && k != "$defs" && k != "definitions" && k != "components" {
-				cleanRootDef[k] = v
-			}
-		}
-		for id, def := range ctx.defs {
-			if fmt.Sprintf("%p", def) == fmt.Sprintf("%p", root) {
-				ctx.defs[id] = cleanRootDef
-			}
-		}
-
 		if cfg.Target == OpenAPI30 {
 			root[defsKey] = map[string]any{"schemas": ctx.defs}
 		} else {
@@ -170,7 +157,7 @@ func ToJSONSchema(s AnySchema, opts ...JSONSchemaOption) ([]byte, error) {
 		}
 	}
 
-	return json.Marshal(root)
+	return json.Marshal(root, json.Deterministic(true))
 }
 
 func (ctx *schemaGenCtx) generateNode(n node, meta Meta, path string) (map[string]any, error) {
@@ -232,8 +219,12 @@ func (ctx *schemaGenCtx) generateNode(n node, meta Meta, path string) (map[strin
 		res["type"] = "string"
 		res["contentEncoding"] = "base64"
 	case kindLiteral:
-		if lit, ok := n.(interface{ Value() any }); ok {
-			res["const"] = lit.Value()
+		if lit, ok := n.(interface{ jsonSchemaValues() []any }); ok {
+			if vals := lit.jsonSchemaValues(); len(vals) == 1 {
+				res["const"] = vals[0]
+			} else if len(vals) > 1 {
+				res["enum"] = vals
+			}
 		}
 	case kindEnum:
 		if en, ok := n.(interface{ Values() []string }); ok {
@@ -357,7 +348,7 @@ func (ctx *schemaGenCtx) generateNode(n node, meta Meta, path string) (map[strin
 		if opt, ok := n.(interface{ Unwrap() AnySchema }); ok {
 			return ctx.generateNode(opt.Unwrap().node(), meta, path)
 		}
-	case kindNullable:
+	case kindNullable, kindNullish:
 		if nl, ok := n.(interface{ Unwrap() AnySchema }); ok {
 			sub, err := ctx.generateNode(nl.Unwrap().node(), meta, path)
 			if err != nil {
@@ -425,4 +416,13 @@ func (ctx *schemaGenCtx) makeRef(id string) map[string]any {
 		uri = ctx.opts.URI(id)
 	}
 	return map[string]any{"$ref": uri}
+}
+
+// jsonSchemaValues exposes the literal's accepted values to the JSON Schema exporter.
+func (n *literalNode[T]) jsonSchemaValues() []any {
+	vals := make([]any, len(n.values))
+	for i, v := range n.values {
+		vals[i] = v
+	}
+	return vals
 }
