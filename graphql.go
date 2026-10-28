@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 // @spec REQ-GQL-001
@@ -26,6 +27,7 @@ type gqlGenCtx struct {
 	opts         GraphQLOptions
 	types        map[string]string
 	visitedNodes map[any]string
+	names        map[string]any
 }
 
 // @spec REQ-GQL-001
@@ -44,6 +46,7 @@ func ToGraphQLSDL(s AnySchema, opts ...GraphQLOption) (string, error) {
 		opts:         cfg,
 		types:        make(map[string]string),
 		visitedNodes: make(map[any]string),
+		names:        map[string]any{"String": nil, "Float": nil, "Boolean": nil, "DateTime": nil, "BigInt": nil, "Bytes": nil},
 	}
 
 	typeName := "Query"
@@ -89,6 +92,14 @@ func (ctx *gqlGenCtx) generateGQL(n node, meta Meta, nameHint string, required b
 	switch k {
 	case kindTuple:
 		return "", fmt.Errorf("golang-zod: heterogeneous Tuple has no GraphQL equivalent")
+	case kindIntersection:
+		return "", fmt.Errorf("golang-zod: Intersection has no GraphQL equivalent")
+	case kindDefault:
+		if d, ok := n.(interface{ Unwrap() AnySchema }); ok {
+			return ctx.generateGQL(d.Unwrap().node(), meta, nameHint, required)
+		}
+	case kindUnion, kindDiscriminatedUnion:
+		return ctx.generateUnion(n, meta, nameHint, required)
 	case kindOptional, kindNullable, kindNullish:
 		if opt, ok := n.(interface{ Unwrap() AnySchema }); ok {
 			// Inverted nullability: optional/nullable fields in GraphQL do NOT have the '!' suffix
@@ -110,10 +121,10 @@ func (ctx *gqlGenCtx) generateGQL(n node, meta Meta, nameHint string, required b
 		ctx.types["scalar Bytes"] = "scalar Bytes"
 		return formatReq("Bytes", required), nil
 	case kindEnum:
-		enumName := nameHint
-		if meta.ID != "" {
-			enumName = meta.ID
+		if existing, ok := ctx.visitedNodes[n]; ok {
+			return formatReq(existing, required), nil
 		}
+		enumName := ctx.allocName(n, nameHint, meta)
 		if en, ok := n.(interface{ Values() []string }); ok {
 			vals := en.Values()
 			var valLines []string
@@ -132,16 +143,11 @@ func (ctx *gqlGenCtx) generateGQL(n node, meta Meta, nameHint string, required b
 			}
 			return formatReq(fmt.Sprintf("[%s]", elemRef), required), nil
 		}
-	case kindObject:
-		objName := nameHint
-		if meta.ID != "" {
-			objName = meta.ID
-		}
-
+	case kindObject, kindStruct:
 		if existing, ok := ctx.visitedNodes[n]; ok {
 			return formatReq(existing, required), nil
 		}
-		ctx.visitedNodes[n] = objName
+		objName := ctx.allocName(n, nameHint, meta)
 
 		keyword := "type"
 		if ctx.opts.IsInput {
@@ -160,7 +166,7 @@ func (ctx *gqlGenCtx) generateGQL(n node, meta Meta, nameHint string, required b
 
 				// Required unless optional/nullable
 				fReq := fk != kindOptional && fk != kindNullish && fk != kindNullable
-				fRef, err := ctx.generateGQL(fNode, fSch.GetMeta(), objName+strings.Title(fn), fReq)
+				fRef, err := ctx.generateGQL(fNode, fSch.GetMeta(), objName+pascalCase(fn), fReq)
 				if err != nil {
 					return "", err
 				}
@@ -185,4 +191,67 @@ func formatReq(t string, req bool) string {
 		return t + "!"
 	}
 	return t
+}
+
+// allocName reserves a unique type name for node n (Meta.ID or the generated hint)
+// and records it so the same node always resolves to the same name. Distinct nodes
+// that collide on a name receive a numeric suffix (Name2, Name3, ...).
+func (ctx *gqlGenCtx) allocName(n node, hint string, meta Meta) string {
+	base := hint
+	if meta.ID != "" {
+		base = meta.ID
+	}
+	name := base
+	for i := 2; ; i++ {
+		if _, taken := ctx.names[name]; !taken {
+			break
+		}
+		name = fmt.Sprintf("%s%d", base, i)
+	}
+	ctx.names[name] = n
+	ctx.visitedNodes[n] = name
+	return name
+}
+
+// generateUnion emits a GraphQL union of object types.
+func (ctx *gqlGenCtx) generateUnion(n node, meta Meta, nameHint string, required bool) (string, error) {
+	if existing, ok := ctx.visitedNodes[n]; ok {
+		return formatReq(existing, required), nil
+	}
+	if ctx.opts.IsInput {
+		return "", fmt.Errorf("golang-zod: Union has no GraphQL input equivalent")
+	}
+	u := n.(interface{ Options() []AnySchema }) // union kinds are always *unionNode
+	name := ctx.allocName(n, nameHint, meta)
+	var members []string
+	for i, opt := range u.Options() {
+		if unwrapNode(opt.node()).kind() != kindObject && unwrapNode(opt.node()).kind() != kindStruct {
+			return "", fmt.Errorf("golang-zod: Union with non-object member has no GraphQL equivalent")
+		}
+		ref, err := ctx.generateGQL(opt.node(), opt.GetMeta(), fmt.Sprintf("%sOption%d", name, i+1), true)
+		if err != nil {
+			return "", err
+		}
+		members = append(members, strings.TrimSuffix(ref, "!"))
+	}
+	ctx.types[name] = fmt.Sprintf("union %s = %s", name, strings.Join(members, " | "))
+	return formatReq(name, required), nil
+}
+
+// pascalCase upper-cases the first letter of each alphanumeric run and drops separators.
+func pascalCase(s string) string {
+	var sb strings.Builder
+	upper := true
+	for _, r := range s {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) {
+			upper = true
+			continue
+		}
+		if upper {
+			r = unicode.ToUpper(r)
+			upper = false
+		}
+		sb.WriteRune(r)
+	}
+	return sb.String()
 }

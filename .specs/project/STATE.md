@@ -62,7 +62,7 @@ All 7 Milestones (M1–M7) and complete Docsify documentation site successfully 
 ## Spec Deviations
 - [2026-10-28] **ADR-022** REQ-PIPE-007 implemented (schema `.Error/.ErrorFunc`, check options `Message/MessageFunc/Abort` on String/Number, `Config.UseError`); REQ-OPT-002/003 re-specified: token-based single-pass decoder (`json_decode.go`) with exact integers kept as `json.Number`, true node-level streaming dropped.
 - REQ-OBJ-011..013 are referenced by the index but defined in no spec.
-- Known gaps vs spec (not implemented): JSON Schema exporter still omits string formats/lengths/patterns and array/set size checks, has no `Unrepresentable(func)` and emits `oneOf` for plain unions (Int/Record/Tuple/Struct/Pipe/Readonly/Catch/Prefault/Default, `Reused(Ref)`, `WithOverride` and `WithMetadata` are done, see feature 07 spec Status); GraphQL intersection returns `String!` instead of an error (REQ-GQL-005) and has no numeric-suffix collision naming (REQ-GQL-003); `FromJSONSchema` ignores `$ref`, `anyOf`, `prefixItems`, `nullable`, formats; absent `Prefault`/`Catch` object fields count as required.
+- Known gaps vs spec (not implemented): JSON Schema exporter still omits string formats/lengths/patterns and array/set size checks (REQ-EXP-002), has no `Unrepresentable(func)` and emits `oneOf` for plain unions; GraphQL exports Record and Map as `String!`; `FromJSONSchema` rejects (with an error) remote `$ref`, `patternProperties`, `contains`, `unevaluated*` and similar keywords instead of importing them.
 
 ## Open Questions
 - Implement REQ-PIPE-007 and REQ-OPT-002/003, or relax the specs to match the code? The six decisions raised by the Zod v4 audit were answered on 2026-10-27 (see ADR-021).

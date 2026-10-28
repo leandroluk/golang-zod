@@ -310,3 +310,16 @@ func NewReadonlySchema[T any](inner Schema[T]) ReadonlySchema[T] {
 func (s ReadonlySchema[T]) Unwrap() Schema[T] {
 	return s.inner
 }
+
+// parseAbsent evaluates a Default/Prefault/Catch node for an object key that is absent.
+// Catch yields its fallback directly (absence is never treated as a null input).
+func parseAbsent(ctx *parseCtx, n node) (any, bool) {
+	if c, ok := n.(interface{ absent() any }); ok {
+		return c.absent(), true
+	}
+	return n.parse(ctx, nil)
+}
+
+func (n *catchNode[T]) absent() any {
+	return n.catchFn([]Issue{{Code: InvalidType, Expected: "required"}})
+}

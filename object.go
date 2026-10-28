@@ -103,9 +103,9 @@ func (n *objectNode) parse(ctx *parseCtx, in any) (any, bool) {
 				// Absent optional keys are omitted from Dyn
 				continue
 			}
-			if k == kindDefault {
+			if k == kindDefault || k == kindPrefault || k == kindCatch {
 				// Default schema supplies fallback on absence
-				out, ok := f.schema.node().parse(ctx, nil)
+				out, ok := parseAbsent(ctx, f.schema.node())
 				if ok {
 					result[f.name] = out
 				}
