@@ -2,10 +2,12 @@ package z
 
 import (
 	"encoding/json"
+	"errors"
 	"math"
 	"math/big"
 	"slices"
 	"strconv"
+	"strings"
 )
 
 // NumberConstraint defines all built-in Go numeric types supported by NumberSchema.
@@ -44,8 +46,29 @@ type numberNode[T NumberConstraint] struct {
 
 func (n *numberNode[T]) kind() nodeKind { return kindNumber }
 func (n *numberNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
-	val, ok := convertToNumber[T](in)
-	if !ok {
+	val, conv := convertToNumber[T](in)
+	switch conv {
+	case convTooSmall:
+		ctx.addIssue(Issue{
+			Code:      TooSmall,
+			Origin:    "number",
+			Minimum:   minOf[T](),
+			Inclusive: true,
+			Input:     in,
+		})
+		var zero T
+		return zero, false
+	case convTooBig:
+		ctx.addIssue(Issue{
+			Code:      TooBig,
+			Origin:    "number",
+			Maximum:   maxOf[T](),
+			Inclusive: true,
+			Input:     in,
+		})
+		var zero T
+		return zero, false
+	case convInvalid:
 		ctx.addIssue(Issue{
 			Code:     InvalidType,
 			Expected: "number",
@@ -56,7 +79,7 @@ func (n *numberNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	}
 
 	// Reject NaN and Inf for floats
-	if f, isFloat := any(val).(float64); isFloat && (math.IsNaN(f) || math.IsInf(f, 0)) {
+	if f := float64(val); math.IsNaN(f) || math.IsInf(f, 0) {
 		ctx.addIssue(Issue{
 			Code:     InvalidType,
 			Expected: "number",
@@ -159,42 +182,138 @@ func isMultipleOf[T NumberConstraint](val, divisor T) bool {
 	return math.Abs(remainder) < 1e-9
 }
 
-func convertToNumber[T NumberConstraint](in any) (T, bool) {
+type numConv int
+
+const (
+	convOK numConv = iota
+	convInvalid
+	convTooSmall
+	convTooBig
+)
+
+// isIntegerKind reports whether T is an integer type (as opposed to float32/float64).
+func isIntegerKind[T NumberConstraint]() bool {
+	half := 0.5
+	return T(half) == 0
+}
+
+// isUnsignedKind reports whether T is an unsigned integer type.
+func isUnsignedKind[T NumberConstraint]() bool {
+	var z T
+	return isIntegerKind[T]() && z-1 > z
+}
+
+// maxOf returns the largest value of integer type T.
+func maxOf[T NumberConstraint]() T {
+	var z T
+	if isUnsignedKind[T]() {
+		return z - 1
+	}
+	m := T(1)
+	for m*2+1 > m {
+		m = m*2 + 1
+	}
+	return m
+}
+
+// minOf returns the smallest value of integer type T.
+func minOf[T NumberConstraint]() T {
+	if isUnsignedKind[T]() {
+		return 0
+	}
+	return -maxOf[T]() - 1
+}
+
+// fromInt64 converts an int64 to T, reporting overflow for integer kinds.
+func fromInt64[T NumberConstraint](x int64) (T, numConv) {
+	t := T(x)
+	if !isIntegerKind[T]() {
+		return t, convOK
+	}
+	if (x < 0) != (t < 0) || int64(t) != x {
+		if x < 0 {
+			return 0, convTooSmall
+		}
+		return 0, convTooBig
+	}
+	return t, convOK
+}
+
+// fromUint64 converts a uint64 to T, reporting overflow for integer kinds.
+func fromUint64[T NumberConstraint](u uint64) (T, numConv) {
+	t := T(u)
+	if isIntegerKind[T]() && (t < 0 || uint64(t) != u) {
+		return 0, convTooBig
+	}
+	return t, convOK
+}
+
+// fromFloat64 converts a float64 to T; integer kinds require an integral value in range.
+func fromFloat64[T NumberConstraint](f float64) (T, numConv) {
+	if !isIntegerKind[T]() {
+		return T(f), convOK
+	}
+	if f != math.Trunc(f) {
+		return 0, convInvalid
+	}
+	switch {
+	case f < -(1 << 63):
+		return 0, convTooSmall
+	case f >= (1 << 64):
+		return 0, convTooBig
+	case f >= (1 << 63):
+		return fromUint64[T](uint64(f))
+	}
+	return fromInt64[T](int64(f))
+}
+
+func convertToNumber[T NumberConstraint](in any) (T, numConv) {
 	var zero T
 	switch v := in.(type) {
 	case T:
-		return v, true
+		return v, convOK
 	case int:
-		return T(v), true
+		return fromInt64[T](int64(v))
 	case int64:
-		return T(v), true
+		return fromInt64[T](v)
 	case float64:
-		return T(v), true
+		return fromFloat64[T](v)
 	case json.Number:
 		str := string(v)
-		// Check whether T is integer or float
-		switch any(zero).(type) {
-		case int, int8, int16, int32, int64:
-			parsed, err := strconv.ParseInt(str, 10, 64)
-			if err != nil {
-				return zero, false
-			}
-			return T(parsed), true
-		case uint, uint8, uint16, uint32, uint64:
-			parsed, err := strconv.ParseUint(str, 10, 64)
-			if err != nil {
-				return zero, false
-			}
-			return T(parsed), true
-		default:
+		switch {
+		case !isIntegerKind[T]():
 			parsed, err := strconv.ParseFloat(str, 64)
 			if err != nil {
-				return zero, false
+				return zero, convInvalid
 			}
-			return T(parsed), true
+			return T(parsed), convOK
+		case isUnsignedKind[T]():
+			parsed, err := strconv.ParseUint(str, 10, 64)
+			if err != nil {
+				if errors.Is(err, strconv.ErrRange) {
+					return zero, convTooBig
+				}
+				if _, serr := strconv.ParseInt(str, 10, 64); serr == nil {
+					return zero, convTooSmall
+				}
+				return zero, convInvalid
+			}
+			return fromUint64[T](parsed)
+		default:
+			parsed, err := strconv.ParseInt(str, 10, 64)
+			if err != nil {
+				if errors.Is(err, strconv.ErrRange) {
+					if strings.HasPrefix(str, "-") {
+						return zero, convTooSmall
+					}
+					return zero, convTooBig
+				}
+				return zero, convInvalid
+			}
+			return fromInt64[T](parsed)
 		}
 	default:
-		return zero, false
+		return zero, convInvalid
 	}
 }
 

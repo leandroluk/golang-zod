@@ -66,12 +66,17 @@ func (n *recordNode[K, V]) parse(ctx *parseCtx, in any) (any, bool) {
 			return nil, false
 		}
 
+		mark := len(ctx.issues)
 		keyOut, keyOk := n.schema.keySchema.node().parse(ctx, kStr)
 		if !keyOk {
 			if n.schema.mode == recordModeLoose {
+				// Non-matching keys are skipped silently: drop the key schema's own issues.
+				ctx.issues = ctx.issues[:mark]
 				continue
 			}
 			if isEnumKey {
+				// Reported collectively as unrecognized_keys below.
+				ctx.issues = ctx.issues[:mark]
 				unrecognized = append(unrecognized, kStr)
 				allOk = false
 				continue
