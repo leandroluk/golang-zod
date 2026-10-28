@@ -6,7 +6,7 @@
 
 <div align="center">
   <h1>golang-zod</h1>
-  <p><strong>Idiomatic, struct-tag optional, zero-reflect runtime schema validation and serialization library for Go, faithfully ported from pure Zod v4.</strong></p>
+  <p><strong>Idiomatic, generics-based, zero-reflect runtime schema validation and serialization library for Go, faithfully ported from pure Zod v4.</strong></p>
 </div>
 
 <br/>
@@ -25,7 +25,7 @@
 
 <br/>
 
-`golang-zod` brings the developer experience (DX) of TypeScript's [Zod v4](https://github.com/colinhacks/zod) to the Go ecosystem: **zero struct tags required**, **zero reflection at runtime**, **first-class i18n out of the box**, and an introspectable runtime schema model that exports effortlessly to **JSON Schema**, **OpenAPI 3.1**, and **GraphQL SDL**.
+`golang-zod` brings the developer experience (DX) of TypeScript's [Zod v4](https://github.com/colinhacks/zod) to the Go ecosystem: **no custom struct tags** (`z.Struct` reuses the standard `json` tag; `z.Object` needs none), **zero reflection at runtime**, **first-class i18n out of the box**, and an introspectable runtime schema model that exports effortlessly to **JSON Schema**, **OpenAPI 3.1**, and **GraphQL SDL**.
 
 ---
 
@@ -33,7 +33,7 @@
 
 - 🎯 **Pure Zod v4 API**: Top-level format constructors (`z.Email()`, `z.UUID()`, `z.ISO.DateTime()`, `z.Int32()`), `.Meta(func(m *z.MetaBuilder) ...)` closure builders, and zero v3 deprecation baggage.
 - ⚡ **Zero-Reflect Runtime**: `z.Struct[T]` runs reflection exactly once during schema definition; at runtime, fields are assigned directly via high-performance pointer offset mechanics with zero reflection overhead.
-- 🚀 **High-Throughput Single-Pass Streaming**: Direct streaming validation from `encoding/json/v2` and `jsontext.Decoder` without materializing intermediate decoded `any` maps.
+- 🚀 **High-Throughput Single-Pass Streaming**: `ParseJSON` and `Decode` read the input token by token with `jsontext` in a single pass; integers a `float64` cannot hold exactly (`Int64`, `Uint64`, `BigInt`) keep full precision.
 - 🧩 **Zero-Allocation Inline Path Stack**: `parseCtx` uses an inline `[8]PathSegment` array for shallow paths with automatic spill to slice, yielding 0 allocs/op for path traversals during successful parses.
 - 🌍 **Built-in i18n Error Catalog**: Full 11-variant Zod v4 issue taxonomy with pre-translated messages in English (`en`), Brazilian Portuguese (`pt-BR`), and Spanish (`es`), with automatic `Accept-Language` negotiation.
 - 🔀 **Bidirectional Codecs**: `z.Codec(in, out, decode, encode)` and presets (`z.StringBool()`, `z.Codecs.*`) for reverse encoding and deserialization pipelines.

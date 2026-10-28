@@ -17,12 +17,12 @@ Go does not have a native `undefined` type. `golang-zod` defines precise presenc
 
 ```go
 opt := z.Some("hello")
-if opt.IsSome() {
-	val := opt.Unwrap() // "hello"
+if val, ok := opt.Value(); ok {
+	_ = val // "hello"
 }
 
 // Or with fallback
-val := opt.UnwrapOr("fallback")
+val := opt.OrElse("fallback")
 ```
 
 ## Combinators

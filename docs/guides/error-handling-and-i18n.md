@@ -12,7 +12,6 @@ type Issue struct {
 	Path      []PathSegment  `json:"path"`
 	Message   string         `json:"message"`
 	Expected  string         `json:"expected,omitempty"`
-	Received  string         `json:"received,omitempty"`
 	Minimum   any            `json:"minimum,omitempty"`
 	Maximum   any            `json:"maximum,omitempty"`
 	Inclusive bool           `json:"inclusive,omitempty"`
@@ -102,6 +101,42 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 ### Registering Custom Locales
 
+A locale implements `z.Locale` (`Tag() string` and `FormatMessage(issue *z.Issue) string`):
+
 ```go
-z.RegisterLocale("fr", FrenchLocale)
+type frenchLocale struct{}
+
+func (frenchLocale) Tag() string { return "fr" }
+func (frenchLocale) FormatMessage(issue *z.Issue) string {
+	switch issue.Code {
+	case z.InvalidType:
+		return "Type invalide : attendu " + issue.Expected
+	default:
+		return z.LocaleEN.FormatMessage(issue)
+	}
+}
+
+z.RegisterLocale("fr", frenchLocale{})
 ```
+
+---
+
+## Custom Error Messages
+
+Messages can be customized at three levels. From highest to lowest precedence: the **check**, the **schema**, and a **global function**; the locale catalog is the fallback. A function that returns `""` falls through to the next level.
+
+```go
+// Check level: trailing options on String and Number checks
+z.String().Min(5, z.Message("too short"))
+z.Int().Min(18, z.MessageFunc(func(i *z.Issue) string { return "adults only" }))
+z.String().Min(5, z.Abort(true)).Regex(re) // stop evaluating checks if Min fails
+
+// Schema level
+z.String().Error("must be text")
+z.String().ErrorFunc(func(i *z.Issue) string { return "bad " + i.Expected })
+
+// Global level (application startup)
+z.Config.UseError(func(i *z.Issue) string { return "" }) // nil removes it
+```
+
+A schema-level message applies only to the issues that schema itself produces, never to the issues of its children.

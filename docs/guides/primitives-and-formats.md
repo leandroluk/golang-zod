@@ -29,7 +29,7 @@ z.String().
 	Trim().
 	ToLowerCase().
 	ToUpperCase().
-	Regex(`^[A-Z0-9]+$`)
+	Regex(regexp.MustCompile(`^[A-Z0-9]+$`))
 ```
 
 ### Top-Level String Formats (Zod v4 Standard)
@@ -42,15 +42,12 @@ z.UUID()        // UUID v4 format
 z.URL()         // RFC-compliant URL
 z.IPv4()        // IPv4 dotted address
 z.IPv6()        // IPv6 address
-z.IP()          // Either IPv4 or IPv6
 z.CreditCard()  // Valid Luhn checksum number
-z.CUID()        // CUID format
 z.CUID2()       // CUID2 format
 z.ULID()        // ULID format
 z.Base64()      // Standard Base64 encoded string
 z.Hex()         // Hexadecimal encoded string
 z.Emoji()       // Unicode emoji sequence
-z.Semver()      // Semantic version string (e.g. 1.2.3)
 z.JWT()         // Three-part JSON Web Token
 ```
 
@@ -85,7 +82,7 @@ Convert incoming string or numeric representations into their target types autom
 ```go
 z.Coerce.String()   // 123 -> "123"
 z.Coerce.Int()      // "42" -> 42
-z.Coerce.Float64()  // "3.14" -> 3.14
+z.Coerce.Float()    // "3.14" -> 3.14 (z.Coerce.Number() is an alias)
 z.Coerce.Boolean()  // "true", 1 -> true
 z.Coerce.Date()     // "2026-01-01T00:00:00Z" -> time.Time
 z.Coerce.BigInt()   // "999999999999999999" -> *big.Int

@@ -1,0 +1,41 @@
+name: release
+
+# Tag `vX.Y.Z` to publish a release. Go modules are published by the tag itself;
+# this workflow verifies the tag, warms the Go module proxy / pkg.go.dev and
+# creates the GitHub release.
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Verify tag is a semantic version
+        run: |
+          if ! echo "${GITHUB_REF_NAME}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "Tag ${GITHUB_REF_NAME} is not a valid semantic version (vX.Y.Z)"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race -count=1 ./...
+
+      - name: Request module from the Go proxy (pkg.go.dev)
+        run: GOPROXY=https://proxy.golang.org GO111MODULE=on go list -m "github.com/leandroluk/golang-zod@${GITHUB_REF_NAME}"
+
+      - name: GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
