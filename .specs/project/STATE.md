@@ -39,6 +39,7 @@ All 7 Milestones (M1–M7) and complete Docsify documentation site successfully 
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-28] Traceability: added `feature_traceability_test.go` (REQ-GQL-003, REQ-PIPE-002, REQ-PIPE-009); recorded spec deviations above.
 - [2026-10-28] Docs assets for golang-zod (go-logo.svg, social-preview.html/png; rust-logo.svg removed). Spec drift fix: tests of features 04-08 renamed to `TestREQ_<AREA>_<NNN>_*` with `// @spec REQ-*` tags (matching 01-03); stale HANDOFF.md removed; `coverage` ignored. Gate: vet + 138 tests/subtests pass with -race.
 - [2026-10-27] Docs complete: Created full Docsify documentation site mirroring `rust-zod/docs` with index.html, _sidebar.md, README.md, guides (Getting Started, Primitives & Formats, Objects & Structs, Type Conversion, Codecs & Pipelines, Error Handling & i18n, JSON Schema & OpenAPI, GraphQL SDL), examples (Web API Payload, Bidirectional Codecs), and assets.
 - [2026-10-27] Milestone 7 (09-optimizations) complete: Inline path stack with [8]PathSegment and zero allocations for shallow paths, spill support for 12+ levels, sync.Pool isolation test under 10 000 concurrent iterations, Struct.ParseTo destination reuse, benchmarks for primitives, email, object, struct. Gate: 96/96 pass with -race. [REQ-OPT-001]..[REQ-OPT-007]
@@ -57,5 +58,10 @@ All 7 Milestones (M1–M7) and complete Docsify documentation site successfully 
 ## Lessons Learned (Last 5)
 - Verify language-level claims with the compiler before specifying them (e.g. generic-method limits).
 
+## Spec Deviations
+- SPEC_DEVIATION REQ-PIPE-007: error customization (`.Error`/`.ErrorFunc`, check `Message`/`MessageFunc`/`Abort`) is NOT implemented, although M5 is marked complete.
+- SPEC_DEVIATION REQ-OPT-002/003: `ParseJSON`/`Decode` decode into `any` and then `Parse` (schema.go); there is no token streaming and `Int64`/`BigInt` go through the generic decode, not token text.
+- REQ-OBJ-011..013 are referenced by the index but defined in no spec; REQ-COMB-006, OBJ-010, OPT-005/006/007 have no `@spec`-tagged test (benchmarks/node kinds exist).
+
 ## Open Questions
-- None. The six decisions raised by the Zod v4 audit were answered on 2026-10-27 (see ADR-021).
+- Implement REQ-PIPE-007 and REQ-OPT-002/003, or relax the specs to match the code? The six decisions raised by the Zod v4 audit were answered on 2026-10-27 (see ADR-021).
