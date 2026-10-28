@@ -10,7 +10,8 @@ import (
 	z "github.com/leandroluk/golang-zod"
 )
 
-func TestFeature06_Modifiers(t *testing.T) {
+// @spec REQ-PIPE-001
+func TestREQ_PIPE_001_Modifiers(t *testing.T) {
 	t.Run("REQ-PIPE-001: Default substitutes only on absent, not null", func(t *testing.T) {
 		s := z.String().Default("fallback")
 
@@ -80,7 +81,8 @@ func TestFeature06_Modifiers(t *testing.T) {
 	})
 }
 
-func TestFeature06_Refinements(t *testing.T) {
+// @spec REQ-PIPE-003
+func TestREQ_PIPE_003_Refinements(t *testing.T) {
 	t.Run("REQ-PIPE-003: Check, Refine, SuperRefine, RefineCtx", func(t *testing.T) {
 		// Refine
 		isEven := z.Refine[int](z.Int(), func(v int) bool {
@@ -130,7 +132,8 @@ func TestFeature06_Refinements(t *testing.T) {
 	})
 }
 
-func TestFeature06_Pipelines(t *testing.T) {
+// @spec REQ-PIPE-004
+func TestREQ_PIPE_004_Pipelines(t *testing.T) {
 	t.Run("REQ-PIPE-004: Transform, Preprocess, Pipe", func(t *testing.T) {
 		// Transform
 		toUpper := z.Transform[string, string](z.String(), func(s string) (string, error) {
@@ -173,7 +176,8 @@ func TestFeature06_Pipelines(t *testing.T) {
 	})
 }
 
-func TestFeature06_Codecs(t *testing.T) {
+// @spec REQ-PIPE-005 REQ-PIPE-006 REQ-PIPE-008
+func TestREQ_PIPE_005_006_008_Codecs(t *testing.T) {
 	t.Run("REQ-PIPE-005 & REQ-PIPE-008: Codecs Decode, Encode, and Recipes", func(t *testing.T) {
 		// StringInt
 		codec := z.Codecs.StringInt()

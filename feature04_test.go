@@ -12,14 +12,15 @@ import (
 )
 
 type TestUser struct {
-	ID        int      `json:"id"`
-	Name      string   `json:"name"`
-	Email     string   `json:"email"`
-	Bio       string   `json:"bio,omitempty"`
-	IsActive  bool     `json:"is_active"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Bio      string `json:"bio,omitempty"`
+	IsActive bool   `json:"is_active"`
 }
 
-func TestFeature04_Objects(t *testing.T) {
+// @spec REQ-OBJ-001 REQ-OBJ-002 REQ-OBJ-003
+func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 	t.Run("REQ-OBJ-001: Object strip by default", func(t *testing.T) {
 		schema := z.Object(func(s *z.Shape) {
 			s.Field("name", z.String())
@@ -175,7 +176,8 @@ func TestFeature04_Objects(t *testing.T) {
 	})
 }
 
-func TestFeature04_Struct(t *testing.T) {
+// @spec REQ-OBJ-004 REQ-OBJ-006 REQ-OBJ-007
+func TestREQ_OBJ_004_006_007_Struct(t *testing.T) {
 	t.Run("REQ-OBJ-004 & REQ-OBJ-006: Struct validation with unsafe zero-reflect runtime", func(t *testing.T) {
 		userSchema := z.Struct[TestUser](func(s *z.StructShape, u *TestUser) {
 			s.Field(&u.ID, z.Int())
@@ -229,7 +231,8 @@ func TestFeature04_Struct(t *testing.T) {
 	})
 }
 
-func TestFeature04_Record(t *testing.T) {
+// @spec REQ-OBJ-008
+func TestREQ_OBJ_008_Record(t *testing.T) {
 	t.Run("REQ-OBJ-008: Record schema validation", func(t *testing.T) {
 		rec := z.Record(z.String(), z.Int())
 
@@ -283,7 +286,8 @@ func TestFeature04_Record(t *testing.T) {
 	})
 }
 
-func TestFeature04_ArchitecturalInvariants(t *testing.T) {
+// @spec REQ-OBJ-009
+func TestREQ_OBJ_009_ArchitecturalInvariants(t *testing.T) {
 	t.Run("REQ-OBJ-009: Reflect imported ONLY in struct.go, Unsafe imported ONLY in struct_unsafe.go", func(t *testing.T) {
 		fset := token.NewFileSet()
 		files, err := os.ReadDir(".")

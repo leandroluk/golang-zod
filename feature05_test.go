@@ -6,7 +6,8 @@ import (
 	z "github.com/leandroluk/golang-zod"
 )
 
-func TestFeature05_Union(t *testing.T) {
+// @spec REQ-COMB-001 REQ-COMB-002 REQ-COMB-003
+func TestREQ_COMB_001_002_003_Union(t *testing.T) {
 	t.Run("REQ-COMB-001: Union first-matching candidate wins", func(t *testing.T) {
 		u := z.Union(z.String(), z.Int())
 
@@ -95,7 +96,8 @@ func TestFeature05_Union(t *testing.T) {
 	})
 }
 
-func TestFeature05_Intersection(t *testing.T) {
+// @spec REQ-COMB-004 REQ-COMB-005
+func TestREQ_COMB_004_005_Intersection(t *testing.T) {
 	t.Run("REQ-COMB-004: Intersection merges valid outputs", func(t *testing.T) {
 		part1 := z.Object(func(s *z.Shape) {
 			s.Field("id", z.Int())
@@ -141,7 +143,8 @@ func TestFeature05_Intersection(t *testing.T) {
 	})
 }
 
-func TestFeature05_Lazy(t *testing.T) {
+// @spec REQ-COMB-007
+func TestREQ_COMB_007_Lazy(t *testing.T) {
 	t.Run("REQ-COMB-007: Lazy recursive schema resolves and memoizes correctly", func(t *testing.T) {
 		type Category struct {
 			Name          string     `json:"name"`

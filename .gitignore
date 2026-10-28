@@ -26,3 +26,5 @@ Thumbs.db
 .vscode/
 .specs/.cache/
 .specs/.memory/notes/
+
+coverage

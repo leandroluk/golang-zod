@@ -7,7 +7,8 @@ import (
 	z "github.com/leandroluk/golang-zod"
 )
 
-func TestFeature07_JSONSchema(t *testing.T) {
+// @spec REQ-EXP-001 REQ-EXP-002 REQ-EXP-003 REQ-EXP-004 REQ-EXP-005 REQ-EXP-006
+func TestREQ_EXP_001_002_003_004_005_006_JSONSchema(t *testing.T) {
 	t.Run("REQ-EXP-001 & REQ-EXP-002: ToJSONSchema Draft 2020-12 and OpenAPI 3.0", func(t *testing.T) {
 		user := z.Object(func(s *z.Shape) {
 			s.Field("name", z.String())

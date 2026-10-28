@@ -7,7 +7,8 @@ import (
 	z "github.com/leandroluk/golang-zod"
 )
 
-func TestFeature08_GraphQL(t *testing.T) {
+// @spec REQ-GQL-001 REQ-GQL-002 REQ-GQL-004 REQ-GQL-005
+func TestREQ_GQL_001_002_004_005_GraphQL(t *testing.T) {
 	t.Run("REQ-GQL-001 & REQ-GQL-002: ToGraphQLSDL with inverted nullability", func(t *testing.T) {
 		roleEnum := z.Enum("ADMIN", "USER").Meta(func(m *z.MetaBuilder) {
 			m.ID("Role")
