@@ -13,7 +13,7 @@ type optionalNode[T any] struct {
 	schema AnySchema
 }
 
-func (n *optionalNode[T]) kind() nodeKind { return kindOptional }
+func (n *optionalNode[T]) kind() nodeKind    { return kindOptional }
 func (n *optionalNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *optionalNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
@@ -62,7 +62,7 @@ type nullableNode[T any] struct {
 	schema AnySchema
 }
 
-func (n *nullableNode[T]) kind() nodeKind { return kindNullable }
+func (n *nullableNode[T]) kind() nodeKind    { return kindNullable }
 func (n *nullableNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *nullableNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
@@ -105,7 +105,7 @@ type nullishNode[T any] struct {
 	schema AnySchema
 }
 
-func (n *nullishNode[T]) kind() nodeKind { return kindNullish }
+func (n *nullishNode[T]) kind() nodeKind    { return kindNullish }
 func (n *nullishNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *nullishNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
@@ -140,8 +140,8 @@ func (s NullishSchema[T]) Unwrap() Schema[T] {
 // DefaultSchema wraps an inner schema to apply a fallback value when input is absent.
 type DefaultSchema[T any] struct {
 	BaseSchema[T]
-	inner        Schema[T]
-	defaultFn    func() T
+	inner     Schema[T]
+	defaultFn func() T
 }
 
 type defaultNode[T any] struct {
@@ -150,7 +150,7 @@ type defaultNode[T any] struct {
 	defaultFn func() T
 }
 
-func (n *defaultNode[T]) kind() nodeKind { return kindDefault }
+func (n *defaultNode[T]) kind() nodeKind    { return kindDefault }
 func (n *defaultNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *defaultNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {

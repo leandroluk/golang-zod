@@ -3,7 +3,7 @@
 **Last Updated:** 2026-10-28
 
 ## Current Work
-All 7 Milestones (M1–M7) and complete Docsify documentation site successfully implemented, tested with -race (138 tests and subtests pass), benchmarked, and synchronized.
+All 7 Milestones (M1–M7) and complete Docsify documentation site successfully implemented, tested with -race (100.0% statement coverage, enforced in CI), benchmarked, and synchronized.
 
 ## Todos
 - [x] Implement M4 `04-objects-records`, `05-unions-intersections-lazy`
@@ -39,6 +39,7 @@ All 7 Milestones (M1–M7) and complete Docsify documentation site successfully 
 - [2026-10-27] **ADR-009** Heterogeneous combinators (`Union`, `Intersection`, `Tuple`, `DiscriminatedUnion`) output `any`; engine is untyped (`node`) with a typed `Schema[T]` layer.
 
 ## Recent Progress (Last 10)
+- [2026-10-28] 100% statement coverage (CI gate). Implemented REQ-PIPE-007 and token-based JSON decoding (ADR-022). Bugs found and fixed while covering: `Coerce.String()` lost coercion after builders; integer schemas truncated/wrapped fractional and out-of-range numbers; `LooseRecord` leaked skipped-key issues; `mergeValues` panicked on uncomparable values; `Catchall` ignored abort-early; cloning a schema with `Meta.ID` panicked; JSON Schema output was non-deterministic, lost root `$schema`, exported `Literal` as `{}` and `Nullish` as object. CI, docs and release workflows added.
 - [2026-10-28] Traceability: added `feature_traceability_test.go` (REQ-GQL-003, REQ-PIPE-002, REQ-PIPE-009); recorded spec deviations above.
 - [2026-10-28] Docs assets for golang-zod (go-logo.svg, social-preview.html/png; rust-logo.svg removed). Spec drift fix: tests of features 04-08 renamed to `TestREQ_<AREA>_<NNN>_*` with `// @spec REQ-*` tags (matching 01-03); stale HANDOFF.md removed; `coverage` ignored. Gate: vet + 138 tests/subtests pass with -race.
 - [2026-10-27] Docs complete: Created full Docsify documentation site mirroring `rust-zod/docs` with index.html, _sidebar.md, README.md, guides (Getting Started, Primitives & Formats, Objects & Structs, Type Conversion, Codecs & Pipelines, Error Handling & i18n, JSON Schema & OpenAPI, GraphQL SDL), examples (Web API Payload, Bidirectional Codecs), and assets.
@@ -60,7 +61,8 @@ All 7 Milestones (M1–M7) and complete Docsify documentation site successfully 
 
 ## Spec Deviations
 - [2026-10-28] **ADR-022** REQ-PIPE-007 implemented (schema `.Error/.ErrorFunc`, check options `Message/MessageFunc/Abort` on String/Number, `Config.UseError`); REQ-OPT-002/003 re-specified: token-based single-pass decoder (`json_decode.go`) with exact integers kept as `json.Number`, true node-level streaming dropped.
-- REQ-OBJ-011..013 are referenced by the index but defined in no spec; REQ-COMB-006, OBJ-010, OPT-005/006/007 have no `@spec`-tagged test (benchmarks/node kinds exist).
+- REQ-OBJ-011..013 are referenced by the index but defined in no spec.
+- Known gaps vs spec (not implemented): JSON Schema exports `Int` as `number` and Record/Tuple/Struct/Pipe/Readonly/Catch/Prefault as `object`, no `OverrideWith`/`Metadata`; GraphQL intersection returns `String!` instead of an error (REQ-GQL-005) and has no numeric-suffix collision naming (REQ-GQL-003); `FromJSONSchema` ignores `$ref`, `anyOf`, `prefixItems`, `nullable`, formats; absent `Prefault`/`Catch` object fields count as required.
 
 ## Open Questions
 - Implement REQ-PIPE-007 and REQ-OPT-002/003, or relax the specs to match the code? The six decisions raised by the Zod v4 audit were answered on 2026-10-27 (see ADR-021).

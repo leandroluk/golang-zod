@@ -49,4 +49,3 @@ func ContextIssuesCount(pc any) int {
 	}
 	return 0
 }
-

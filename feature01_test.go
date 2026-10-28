@@ -663,7 +663,3 @@ func TestREQ_CORE_015_Concurrency_Race(t *testing.T) {
 
 	wg.Wait()
 }
-
-
-
-

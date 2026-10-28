@@ -79,7 +79,7 @@ func (s *StructShape) Field[F any](p *F, sch Schema[F]) {
 // StructSchema validates JSON objects and constructs typed struct T instances without reflect at parse time.
 type StructSchema[T any] struct {
 	BaseSchema[T]
-	fields []structFieldBinding
+	fields   []structFieldBinding
 	isStrict bool
 }
 
