@@ -87,7 +87,9 @@ type structNode[T any] struct {
 	schema *StructSchema[T]
 }
 
-func (n *structNode[T]) kind() nodeKind { return kindStruct }
+func (n *structNode[T]) kind() nodeKind                    { return kindStruct }
+func (n *structNode[T]) FieldNames() []string              { return n.schema.FieldNames() }
+func (n *structNode[T]) FieldSchema(name string) AnySchema { return n.schema.FieldSchema(name) }
 func (n *structNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		ctx.addIssue(Issue{
@@ -130,8 +132,8 @@ func (n *structNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 				// Absent optional struct fields remain their zero Option value
 				continue
 			}
-			if k == kindDefault {
-				out, ok := f.schema.node().parse(ctx, nil)
+			if k == kindDefault || k == kindPrefault || k == kindCatch {
+				out, ok := parseAbsent(ctx, f.schema.node())
 				if ok {
 					fieldValues[f.jsonName] = out
 				}
