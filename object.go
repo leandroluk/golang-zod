@@ -57,11 +57,11 @@ type objectNode struct {
 	schema *ObjectSchema
 }
 
-func (n *objectNode) kind() nodeKind { return kindObject }
-func (n *objectNode) FieldNames() []string { return n.schema.FieldNames() }
+func (n *objectNode) kind() nodeKind                    { return kindObject }
+func (n *objectNode) FieldNames() []string              { return n.schema.FieldNames() }
 func (n *objectNode) FieldSchema(name string) AnySchema { return n.schema.FieldSchema(name) }
-func (n *objectNode) Mode() unknownKeysMode { return n.schema.mode }
-func (n *objectNode) CatchallSchema() AnySchema { return n.schema.catchallSch }
+func (n *objectNode) Mode() unknownKeysMode             { return n.schema.mode }
+func (n *objectNode) CatchallSchema() AnySchema         { return n.schema.catchallSch }
 func (n *objectNode) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		ctx.addIssue(Issue{
@@ -149,6 +149,7 @@ func (n *objectNode) parse(ctx *parseCtx, in any) (any, bool) {
 
 	// 2. Handle unknown keys
 	var unrecognized []string
+unknownKeys:
 	for k, v := range rawMap {
 		if _, known := seenKeys[k]; known {
 			continue
@@ -169,7 +170,7 @@ func (n *objectNode) parse(ctx *parseCtx, in any) (any, bool) {
 				if !ok {
 					allOk = false
 					if ctx.shouldAbort() {
-						break
+						break unknownKeys
 					}
 					continue
 				}

@@ -3,6 +3,7 @@ package z
 import (
 	"errors"
 	"fmt"
+	"slices"
 )
 
 // @spec REQ-COMB-004
@@ -21,7 +22,7 @@ type intersectionNode struct {
 	schema *IntersectionSchema
 }
 
-func (n *intersectionNode) kind() nodeKind { return kindIntersection }
+func (n *intersectionNode) kind() nodeKind                   { return kindIntersection }
 func (n *intersectionNode) Operands() (AnySchema, AnySchema) { return n.schema.left, n.schema.right }
 func (n *intersectionNode) parse(ctx *parseCtx, in any) (any, bool) {
 	if err := ctx.checkCancel(); err != nil {
@@ -103,12 +104,57 @@ func mergeValues(a, b any, path string) (any, error) {
 		return res, nil
 	}
 
-	// Scalars must be equal
-	if a == b {
+	if aMaps, ok := a.([]map[string]any); ok {
+		bMaps, ok := b.([]map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("conflict at path %q: conflicting values (%T != %T)", path, a, b)
+		}
+		if len(aMaps) != len(bMaps) {
+			return nil, fmt.Errorf("conflict at path %q: array lengths differ (%d != %d)", path, len(aMaps), len(bMaps))
+		}
+		res := make([]map[string]any, len(aMaps))
+		for i := range aMaps {
+			mergedElem, err := mergeValues(aMaps[i], bMaps[i], fmt.Sprintf("%s[%d]", path, i))
+			if err != nil {
+				return nil, err
+			}
+			res[i] = mergedElem.(map[string]any)
+		}
+		return res, nil
+	}
+
+	if valuesEqual(a, b) {
 		return a, nil
 	}
 
 	return nil, fmt.Errorf("conflict at path %q: conflicting scalar values (%v != %v)", path, a, b)
+}
+
+// valuesEqual compares two non-nil values without panicking on uncomparable
+// dynamic types (slices, maps, funcs). Common scalar and slice types use direct
+// comparison; anything else falls back to comparing type and Go-syntax rendering.
+func valuesEqual(a, b any) bool {
+	switch x := a.(type) {
+	case string, bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return a == b
+	case []string:
+		y, ok := b.([]string)
+		return ok && slices.Equal(x, y)
+	case []int:
+		y, ok := b.([]int)
+		return ok && slices.Equal(x, y)
+	case []int64:
+		y, ok := b.([]int64)
+		return ok && slices.Equal(x, y)
+	case []float64:
+		y, ok := b.([]float64)
+		return ok && slices.Equal(x, y)
+	case []bool:
+		y, ok := b.([]bool)
+		return ok && slices.Equal(x, y)
+	default:
+		return fmt.Sprintf("%T|%#v", a, a) == fmt.Sprintf("%T|%#v", b, b)
+	}
 }
 
 // @spec REQ-COMB-004
