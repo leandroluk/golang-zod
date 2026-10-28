@@ -77,6 +77,7 @@ func TestCoverCStructConstructionPanics(t *testing.T) {
 		}},
 		{"dash json name with options", "must specify a valid json name", func() {
 			type T struct {
+				//lint:ignore SA5008 intentionally malformed tag: the constructor must panic on it
 				V string `json:"-,"`
 			}
 			z.Struct[T](func(s *z.StructShape, u *T) { s.Field(&u.V, z.String()) })

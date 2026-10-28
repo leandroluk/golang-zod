@@ -386,7 +386,6 @@ func TestREQ_CORE_008_009_013_014_I18n(t *testing.T) {
 	})
 
 	t.Run("Custom locale registration", func(t *testing.T) {
-		type customLoc struct{}
 		// test custom locale
 		cl := &testCustomLocale{}
 		z.RegisterLocale("fr", cl)

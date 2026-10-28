@@ -21,9 +21,6 @@
   <a href="https://pkg.go.dev/github.com/leandroluk/golang-zod">
     <img src="https://pkg.go.dev/badge/github.com/leandroluk/golang-zod.svg" alt="Go Reference" />
   </a>
-  <a href="https://goreportcard.com/report/github.com/leandroluk/golang-zod">
-    <img src="https://goreportcard.com/badge/github.com/leandroluk/golang-zod" alt="Go Report Card" />
-  </a>
 </div>
 
 <br/>

@@ -787,7 +787,7 @@ func (n *coercedIntNode) jsonSchemaNumber() jsNumberInfo {
 func (n *objectNode) jsonSchemaObject() ([]jsField, unknownKeysMode, AnySchema) {
 	fields := make([]jsField, len(n.schema.fields))
 	for i, f := range n.schema.fields {
-		fields[i] = jsField{name: f.name, schema: f.schema}
+		fields[i] = jsField(f)
 	}
 	return fields, n.Mode(), n.CatchallSchema()
 }

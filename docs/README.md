@@ -13,13 +13,13 @@
 
 <div align="center">
   <a href="https://github.com/leandroluk/golang-zod/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/leandroluk/golang-zod/ci.yml?branch=main" alt="CI Build Status" />
+    <img src="https://github.com/leandroluk/golang-zod/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Build Status" />
+  </a>
+  <a href="https://codecov.io/gh/leandroluk/golang-zod">
+    <img src="https://img.shields.io/codecov/c/github/leandroluk/golang-zod/main.svg" alt="Coverage Status" />
   </a>
   <a href="https://pkg.go.dev/github.com/leandroluk/golang-zod">
     <img src="https://pkg.go.dev/badge/github.com/leandroluk/golang-zod.svg" alt="Go Reference" />
-  </a>
-  <a href="https://goreportcard.com/report/github.com/leandroluk/golang-zod">
-    <img src="https://goreportcard.com/badge/github.com/leandroluk/golang-zod" alt="Go Report Card" />
   </a>
 </div>
 

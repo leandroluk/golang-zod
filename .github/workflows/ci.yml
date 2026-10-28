@@ -47,6 +47,7 @@ jobs:
         with:
           go-version-file: go.mod
       - name: test with race detector and coverage
+        shell: bash
         run: go test -race -count=1 -covermode=atomic -coverprofile=coverage.out ./...
       - name: enforce 100% coverage
         if: matrix.os == 'ubuntu-latest'

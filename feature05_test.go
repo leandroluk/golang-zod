@@ -146,11 +146,6 @@ func TestREQ_COMB_004_005_Intersection(t *testing.T) {
 // @spec REQ-COMB-007
 func TestREQ_COMB_007_Lazy(t *testing.T) {
 	t.Run("REQ-COMB-007: Lazy recursive schema resolves and memoizes correctly", func(t *testing.T) {
-		type Category struct {
-			Name          string     `json:"name"`
-			Subcategories []Category `json:"subcategories"`
-		}
-
 		var categorySchema z.Schema[z.Dyn]
 		categorySchema = z.Lazy(func() z.Schema[z.Dyn] {
 			return z.Object(func(s *z.Shape) {
