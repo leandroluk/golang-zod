@@ -79,6 +79,7 @@ func ToGraphQLSDL(s AnySchema, opts ...GraphQLOption) (string, error) {
 }
 
 func (ctx *gqlGenCtx) generateGQL(n node, meta Meta, nameHint string, required bool) (string, error) {
+	n = unwrapNode(n)
 	if n == nil {
 		return "String", nil
 	}

@@ -70,6 +70,10 @@ type parseCtx struct {
 	pathLen    int
 	pathSpill  []PathSegment
 	issues     []Issue
+
+	schemaErr      *errorOverride
+	schemaErrDepth int
+	checkErr       *errorOverride
 }
 
 var parseCtxPool = sync.Pool{
@@ -93,6 +97,7 @@ func acquireParseCtx(ctx context.Context) *parseCtx {
 	pc.pathLen = 0
 	pc.pathSpill = pc.pathSpill[:0]
 	pc.issues = pc.issues[:0]
+	pc.schemaErr, pc.schemaErrDepth, pc.checkErr = nil, 0, nil
 	return pc
 }
 
@@ -108,6 +113,7 @@ func releaseParseCtx(pc *parseCtx) {
 	pc.pathLen = 0
 	pc.pathSpill = pc.pathSpill[:0]
 	pc.issues = pc.issues[:0]
+	pc.schemaErr, pc.schemaErrDepth, pc.checkErr = nil, 0, nil
 	parseCtxPool.Put(pc)
 }
 
@@ -149,6 +155,9 @@ func (c *parseCtx) addIssue(issue Issue) {
 	if len(issue.Path) == 0 && c.pathLen > 0 {
 		issue.Path = c.currentPath()
 	}
+	if issue.Message == "" {
+		issue.Message = c.customMessage(&issue)
+	}
 	resolveIssueMessage(&issue, c.locale)
 	c.issues = append(c.issues, issue)
 }
@@ -170,4 +179,20 @@ func (c *parseCtx) checkCancel() error {
 	default:
 		return nil
 	}
+}
+
+// customMessage applies the error precedence: check, schema, global (locale catalog is the caller's fallback).
+func (c *parseCtx) customMessage(issue *Issue) string {
+	if msg := c.checkErr.resolve(issue); msg != "" {
+		return msg
+	}
+	if c.schemaErr != nil && c.pathLen == c.schemaErrDepth {
+		if msg := c.schemaErr.resolve(issue); msg != "" {
+			return msg
+		}
+	}
+	if g := globalErrorFn.Load(); g != nil {
+		return (*g)(issue)
+	}
+	return ""
 }

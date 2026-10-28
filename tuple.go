@@ -159,3 +159,19 @@ func (s *TupleSchema) Meta(fn func(m *MetaBuilder)) *TupleSchema {
 	c.SetMeta(b.Build())
 	return c
 }
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *TupleSchema) Error(msg string) *TupleSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *TupleSchema) ErrorFunc(fn func(issue *Issue) string) *TupleSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}

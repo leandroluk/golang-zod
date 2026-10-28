@@ -59,8 +59,7 @@ All 7 Milestones (M1–M7) and complete Docsify documentation site successfully 
 - Verify language-level claims with the compiler before specifying them (e.g. generic-method limits).
 
 ## Spec Deviations
-- SPEC_DEVIATION REQ-PIPE-007: error customization (`.Error`/`.ErrorFunc`, check `Message`/`MessageFunc`/`Abort`) is NOT implemented, although M5 is marked complete.
-- SPEC_DEVIATION REQ-OPT-002/003: `ParseJSON`/`Decode` decode into `any` and then `Parse` (schema.go); there is no token streaming and `Int64`/`BigInt` go through the generic decode, not token text.
+- [2026-10-28] **ADR-022** REQ-PIPE-007 implemented (schema `.Error/.ErrorFunc`, check options `Message/MessageFunc/Abort` on String/Number, `Config.UseError`); REQ-OPT-002/003 re-specified: token-based single-pass decoder (`json_decode.go`) with exact integers kept as `json.Number`, true node-level streaming dropped.
 - REQ-OBJ-011..013 are referenced by the index but defined in no spec; REQ-COMB-006, OBJ-010, OPT-005/006/007 have no `@spec`-tagged test (benchmarks/node kinds exist).
 
 ## Open Questions

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json/jsontext"
-	"encoding/json/v2"
 	"fmt"
 	"io"
 )
@@ -44,6 +43,9 @@ func NewBaseSchema[T any](n node) BaseSchema[T] {
 }
 
 func (s BaseSchema[T]) node() node {
+	if s.meta.errOv != nil {
+		return &errorNode{inner: s.innerNode, ov: s.meta.errOv}
+	}
 	return s.innerNode
 }
 
@@ -72,7 +74,7 @@ func (s BaseSchema[T]) Parse(in any, ctx ...context.Context) (T, error) {
 	pc := acquireParseCtx(c)
 	defer releaseParseCtx(pc)
 
-	out, ok := s.innerNode.parse(pc, in)
+	out, ok := s.node().parse(pc, in)
 	if !ok || len(pc.issues) > 0 {
 		var zero T
 		issues := make([]Issue, len(pc.issues))
@@ -103,9 +105,9 @@ func (s BaseSchema[T]) ParseJSON(data []byte, ctx ...context.Context) (T, error)
 		return zero, err
 	}
 
-	var raw any
 	dec := jsontext.NewDecoder(bytes.NewReader(data))
-	if err := json.UnmarshalDecode(dec, &raw); err != nil {
+	raw, err := decodeJSON(dec)
+	if err != nil {
 		var zero T
 		return zero, err
 	}
@@ -123,9 +125,9 @@ func (s BaseSchema[T]) Decode(r io.Reader, ctx ...context.Context) (T, error) {
 		return zero, err
 	}
 
-	var raw any
 	dec := jsontext.NewDecoder(r)
-	if err := json.UnmarshalDecode(dec, &raw); err != nil {
+	raw, err := decodeJSON(dec)
+	if err != nil {
 		var zero T
 		return zero, err
 	}

@@ -177,6 +177,7 @@ func (ctx *schemaGenCtx) generateNode(n node, meta Meta, path string) (map[strin
 	if n == nil {
 		return map[string]any{}, nil
 	}
+	n = unwrapNode(n)
 
 	k := n.kind()
 
