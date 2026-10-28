@@ -242,9 +242,6 @@ func JWT() *StringSchema {
 // Emoji validates strings containing emoji runes.
 func Emoji() *StringSchema {
 	return String().WithCustomCheck("emoji", func(s string) bool {
-		if len(s) == 0 {
-			return false
-		}
 		hasEmoji := false
 		for _, r := range s {
 			if unicode.Is(unicode.So, r) || (r >= 0x1F600 && r <= 0x1F64F) || (r >= 0x1F300 && r <= 0x1F5FF) || (r >= 0x1F680 && r <= 0x1F6FF) {
