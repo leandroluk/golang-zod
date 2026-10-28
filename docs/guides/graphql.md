@@ -58,7 +58,13 @@ GraphQL fields are nullable by default. `golang-zod` mirrors Zod v4's inverted n
 - `.Optional()`, `.Nullable()`, and `.Nullish()` fields emit standard nullable types without `!`.
 - Array elements are non-null by default: `[String!]!`.
 
-### 2. Input Types (`GraphQLInput()`)
+### 2. Naming, Unions and Unsupported Constructs
+
+- Type names come from `Meta.ID`; otherwise the parent type name plus the field name in PascalCase (`home_town` becomes `UserHomeTown`). Distinct types that collide get a numeric suffix (`UserAddress2`).
+- `z.Union`, `z.XOR` and `z.DiscriminatedUnion` of objects or structs emit `union Name = A | B`.
+- Constructs GraphQL cannot represent (intersections, tuples, unions with non-object members) return a descriptive error.
+
+### 3. Input Types (`GraphQLInput()`)
 
 To generate GraphQL `input` definitions rather than `type`:
 
@@ -76,6 +82,6 @@ input User {
 }
 ```
 
-### 3. Custom Scalars
+### 4. Custom Scalars
 
 Primitives like `z.Date()`, `z.BigInt()`, and `z.Bytes()` automatically declare their respective GraphQL custom scalar definitions (`scalar DateTime`, `scalar BigInt`, `scalar Bytes`).

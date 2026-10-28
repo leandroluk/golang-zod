@@ -36,15 +36,19 @@ dataOpenAPI31, _ := z.ToJSONSchema(userSchema, z.WithTarget(z.OpenAPI31))
 ### Exporter Options
 
 - `z.WithIO(z.Input | z.Output)`: Select input vs output side for codecs and defaults.
-- `z.WithUnrepresentable(z.UnrepresentableThrow | z.UnrepresentableAny)`: Choose whether schemas without JSON Schema counterparts (e.g. `z.Date()`, `z.BigInt()`) throw an error or emit `{}`.
+- `z.WithUnrepresentable(z.UnrepresentableThrow | z.UnrepresentableAny)`: Choose whether schemas without JSON Schema counterparts (e.g. `z.Date()`, `z.BigInt()`, `z.Int64()`, `z.Uint64()`, `z.Map()`, `z.Set()`) throw an error or emit `{}`.
 - `z.WithCycles(z.CyclesRef | z.CyclesThrow)`: Configure cycle resolution using `$ref` pointers.
-- `z.WithReused(z.ReusedRef | z.ReusedInline)`: Deduplicate repeated schemas into `$defs`.
+- `z.WithReused(z.ReusedRef | z.ReusedInline)`: Deduplicate repeated schemas into `$defs` (default: inline).
+- `z.WithOverride(func(s z.AnySchema, path string, js map[string]any))`: Adjust the generated JSON object of each schema before it is stored.
+- `z.WithMetadata(func(s z.AnySchema) (z.Meta, bool))`: Supply extra metadata (title, description, examples, ...) merged over the schema's own `Meta`.
+
+Integer schemas (`z.Int()`, `z.Int32()`, `z.Uint8()`, ...) export as `type: "integer"`; Record, Tuple, Struct, Pipe/Codec, Readonly, Default, Catch and Prefault each have their own mapping, and output is deterministic so it can be used in golden-file tests.
 
 ---
 
 ## Reverse JSON Schema Importer (`z.FromJSONSchema`)
 
-`golang-zod` can dynamically reconstruct validation schemas from external JSON Schema specifications at runtime:
+`golang-zod` can dynamically reconstruct validation schemas from external JSON Schema specifications at runtime. It supports local `$ref` (including recursion), `anyOf`/`oneOf`/`allOf`, `const`/`enum`, numeric/string/array/object constraints, `prefixItems` tuples, `nullable`, `integer` and string `format`s. Keywords it cannot reproduce faithfully (remote `$ref`, `patternProperties`, `contains`, `unevaluated*`, ...) return an error instead of being silently ignored:
 
 ```go
 rawSchema := []byte(`{
