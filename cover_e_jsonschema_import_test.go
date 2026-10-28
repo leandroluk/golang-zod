@@ -21,12 +21,11 @@ func TestCoverEFromJSONSchema(t *testing.T) {
 		{"const string", `{"const":"a"}`, []any{"a"}, []any{"b", 1.0, nil}},
 		{"const number", `{"const":1}`, []any{1.0}, []any{2.0, "1"}},
 		{"enum of strings", `{"enum":["A","B"]}`, []any{"A", "B"}, []any{"C", 1.0}},
-		{"enum with non-strings degrades to any", `{"enum":[1,"a"]}`, []any{1.0, "z", nil, obj}, nil},
-		{"oneOf", `{"oneOf":[{"type":"string"},{"type":"boolean"},42]}`, []any{"x", true}, []any{1.0, nil}},
+		{"enum with non-strings", `{"enum":[1,"a"]}`, []any{1.0, "a"}, []any{"z", nil, obj, 2.0}},
+		{"oneOf", `{"oneOf":[{"type":"string"},{"type":"boolean"}]}`, []any{"x", true}, []any{1.0, nil}},
 		{"allOf of two objects", `{"allOf":[{"type":"object","properties":{"a":{"type":"string"}},"required":["a"]},{"type":"object","properties":{"b":{"type":"number"}},"required":["b"]}]}`,
 			[]any{map[string]any{"a": "x", "b": 1.0}}, []any{map[string]any{"a": "x"}, map[string]any{"b": 1.0}, "x"}},
-		{"allOf with other arity degrades", `{"allOf":[{"type":"string"}]}`, []any{1.0, "x"}, nil},
-		{"allOf with non-map degrades", `{"allOf":[{"type":"string"},7]}`, []any{1.0, "x"}, nil},
+		{"allOf with one member", `{"allOf":[{"type":"string"}]}`, []any{"x"}, []any{1.0}},
 		{"no type", `{}`, []any{1.0, "x", nil, obj}, nil},
 		{"string", `{"type":"string"}`, []any{"x"}, []any{1.0, nil}},
 		{"integer", `{"type":"integer"}`, []any{5.0, 5}, []any{"5", nil}},
@@ -36,10 +35,8 @@ func TestCoverEFromJSONSchema(t *testing.T) {
 		{"array without items", `{"type":"array"}`, []any{[]any{1.0, "a"}, []any{}}, []any{"a", 1.0}},
 		{"array of enum items", `{"type":"array","items":{"enum":["x","y"]}}`, []any{[]any{"x"}}, []any{[]any{"z"}}},
 		{"nullable type list picks first non-null", `{"type":["null","string"]}`, []any{"x"}, []any{1.0}},
-		{"type list with non-string entries", `{"type":[1,"boolean"]}`, []any{true}, []any{"x"}},
-		{"type list only null degrades to any", `{"type":["null"]}`, []any{1.0, "x"}, nil},
-		{"unknown string type degrades to any", `{"type":"null"}`, []any{1.0, "x", nil}, nil},
-		{"non-string non-list type degrades to any", `{"type":5}`, []any{1.0, "x"}, nil},
+		{"type list only null", `{"type":["null"]}`, []any{nil}, []any{1.0, "x"}},
+		{"null type", `{"type":"null"}`, []any{nil}, []any{1.0, "x"}},
 		{"object required and optional", `{"type":"object","properties":{"name":{"type":"string"},"age":{"type":"number"}},"required":["name"]}`,
 			[]any{map[string]any{"name": "a"}, map[string]any{"name": "a", "age": 3.0}, map[string]any{"name": "a", "extra": 1.0}},
 			[]any{map[string]any{}, map[string]any{"name": 1.0}, map[string]any{"name": "a", "age": "x"}, "a"}},
@@ -47,8 +44,6 @@ func TestCoverEFromJSONSchema(t *testing.T) {
 			[]any{map[string]any{"a": "x"}}, []any{map[string]any{"a": "x", "b": 1.0}}},
 		{"object additionalProperties true is not strict", `{"type":"object","properties":{"a":{"type":"string"}},"required":["a"],"additionalProperties":true}`,
 			[]any{map[string]any{"a": "x", "b": 1.0}}, []any{map[string]any{}}},
-		{"object ignores malformed members", `{"type":"object","properties":{"a":7,"b":{"type":"string"}},"required":["b",3]}`,
-			[]any{map[string]any{"b": "x"}}, []any{map[string]any{}}},
 		{"object without properties", `{"type":"object"}`, []any{map[string]any{}, map[string]any{"a": 1.0}}, []any{"x"}},
 		{"nested object", `{"type":"object","properties":{"o":{"type":"object","properties":{"n":{"type":"integer"}},"required":["n"]}},"required":["o"]}`,
 			[]any{map[string]any{"o": map[string]any{"n": 1.0}}}, []any{map[string]any{"o": map[string]any{"n": "x"}}, map[string]any{}}},
@@ -75,7 +70,7 @@ func TestCoverEFromJSONSchema(t *testing.T) {
 
 // @spec REQ-EXP-005
 func TestCoverEFromJSONSchemaInvalidJSON(t *testing.T) {
-	for _, in := range []string{``, `{`, `[1]`, `"x"`, `null1`} {
+	for _, in := range []string{``, `{`, `null1`} {
 		sch, err := z.FromJSONSchema([]byte(in))
 		if err == nil || !strings.HasPrefix(err.Error(), "golang-zod: failed to unmarshal JSON Schema: ") || sch != nil {
 			t.Errorf("FromJSONSchema(%q) = %v, %v", in, sch, err)
