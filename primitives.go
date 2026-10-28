@@ -351,3 +351,115 @@ func (s *LiteralSchema[T]) Meta(fn func(m *MetaBuilder)) *LiteralSchema[T] {
 	c.SetMeta(b.Build())
 	return &c
 }
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *BooleanSchema) Error(msg string) *BooleanSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *BooleanSchema) ErrorFunc(fn func(issue *Issue) string) *BooleanSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *NullSchema) Error(msg string) *NullSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *NullSchema) ErrorFunc(fn func(issue *Issue) string) *NullSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *AnyPrimitiveSchema) Error(msg string) *AnyPrimitiveSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *AnyPrimitiveSchema) ErrorFunc(fn func(issue *Issue) string) *AnyPrimitiveSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *NeverSchema) Error(msg string) *NeverSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *NeverSchema) ErrorFunc(fn func(issue *Issue) string) *NeverSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *DateSchema) Error(msg string) *DateSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *DateSchema) ErrorFunc(fn func(issue *Issue) string) *DateSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *BytesSchema) Error(msg string) *BytesSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *BytesSchema) ErrorFunc(fn func(issue *Issue) string) *BytesSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *LiteralSchema[T]) Error(msg string) *LiteralSchema[T] {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *LiteralSchema[T]) ErrorFunc(fn func(issue *Issue) string) *LiteralSchema[T] {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}

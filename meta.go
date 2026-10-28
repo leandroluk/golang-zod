@@ -16,6 +16,8 @@ type Meta struct {
 	Deprecated  bool           `json:"deprecated,omitempty"`
 	ReadOnly    bool           `json:"readOnly,omitempty"`
 	Custom      map[string]any `json:"custom,omitempty"`
+
+	errOv *errorOverride
 }
 
 // @spec REQ-CORE-010

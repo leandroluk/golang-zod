@@ -173,3 +173,19 @@ func (s *SetSchema[T]) Meta(fn func(m *MetaBuilder)) *SetSchema[T] {
 	c.SetMeta(b.Build())
 	return c
 }
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *SetSchema[T]) Error(msg string) *SetSchema[T] {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *SetSchema[T]) ErrorFunc(fn func(issue *Issue) string) *SetSchema[T] {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}

@@ -29,6 +29,7 @@ type stringCheck struct {
 	regex     *regexp.Regexp
 	custom    func(s string) bool
 	formatTag string
+	opts      *checkOpts
 }
 
 type stringTransformKind int
@@ -85,6 +86,7 @@ func (n *stringNode) parse(ctx *parseCtx, in any) (any, bool) {
 		if err := ctx.checkCancel(); err != nil {
 			return "", false
 		}
+		mark := ctx.beginCheck(ch.opts)
 		switch ch.kind {
 		case checkMin:
 			if len(val) < ch.intVal {
@@ -204,6 +206,9 @@ func (n *stringNode) parse(ctx *parseCtx, in any) (any, bool) {
 			}
 		}
 
+		if ctx.endCheck(mark, ch.opts) {
+			return "", false
+		}
 		if !allOk && ctx.shouldAbort() {
 			break
 		}
@@ -253,79 +258,79 @@ func (s *StringSchema) clone() *StringSchema {
 
 // @spec REQ-PRIM-002
 // Min enforces a minimum string character length.
-func (s *StringSchema) Min(n int) *StringSchema {
+func (s *StringSchema) Min(n int, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkMin, intVal: n})
+	c.checks = append(c.checks, stringCheck{kind: checkMin, intVal: n, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // NonEmpty enforces that string is not empty (length >= 1).
-func (s *StringSchema) NonEmpty() *StringSchema {
-	return s.Min(1)
+func (s *StringSchema) NonEmpty(opts ...CheckOption) *StringSchema {
+	return s.Min(1, opts...)
 }
 
 // @spec REQ-PRIM-002
 // Max enforces a maximum string character length.
-func (s *StringSchema) Max(n int) *StringSchema {
+func (s *StringSchema) Max(n int, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkMax, intVal: n})
+	c.checks = append(c.checks, stringCheck{kind: checkMax, intVal: n, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // Length enforces exact character length.
-func (s *StringSchema) Length(n int) *StringSchema {
+func (s *StringSchema) Length(n int, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkLength, intVal: n})
+	c.checks = append(c.checks, stringCheck{kind: checkLength, intVal: n, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // Regex validates string against a compiled regular expression.
-func (s *StringSchema) Regex(re *regexp.Regexp) *StringSchema {
+func (s *StringSchema) Regex(re *regexp.Regexp, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkRegex, regex: re})
+	c.checks = append(c.checks, stringCheck{kind: checkRegex, regex: re, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // Includes checks if string contains target substring.
-func (s *StringSchema) Includes(sub string) *StringSchema {
+func (s *StringSchema) Includes(sub string, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkIncludes, strVal: sub})
+	c.checks = append(c.checks, stringCheck{kind: checkIncludes, strVal: sub, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // StartsWith checks if string begins with prefix.
-func (s *StringSchema) StartsWith(prefix string) *StringSchema {
+func (s *StringSchema) StartsWith(prefix string, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkStartsWith, strVal: prefix})
+	c.checks = append(c.checks, stringCheck{kind: checkStartsWith, strVal: prefix, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // EndsWith checks if string terminates with suffix.
-func (s *StringSchema) EndsWith(suffix string) *StringSchema {
+func (s *StringSchema) EndsWith(suffix string, opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkEndsWith, strVal: suffix})
+	c.checks = append(c.checks, stringCheck{kind: checkEndsWith, strVal: suffix, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // Lowercase requires all cased characters in the string to be lowercase.
-func (s *StringSchema) Lowercase() *StringSchema {
+func (s *StringSchema) Lowercase(opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkLowercase})
+	c.checks = append(c.checks, stringCheck{kind: checkLowercase, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-002
 // Uppercase requires all cased characters in the string to be uppercase.
-func (s *StringSchema) Uppercase() *StringSchema {
+func (s *StringSchema) Uppercase(opts ...CheckOption) *StringSchema {
 	c := s.clone()
-	c.checks = append(c.checks, stringCheck{kind: checkUppercase})
+	c.checks = append(c.checks, stringCheck{kind: checkUppercase, opts: buildCheckOpts(opts)})
 	return c
 }
 
@@ -362,12 +367,13 @@ func (s *StringSchema) Slugify() *StringSchema {
 }
 
 // WithCustomCheck attaches an internal format check.
-func (s *StringSchema) WithCustomCheck(name string, fn func(string) bool) *StringSchema {
+func (s *StringSchema) WithCustomCheck(name string, fn func(string) bool, opts ...CheckOption) *StringSchema {
 	c := s.clone()
 	c.checks = append(c.checks, stringCheck{
 		kind:      checkCustom,
 		formatTag: name,
 		custom:    fn,
+		opts:      buildCheckOpts(opts),
 	})
 	if c.formatName == "" {
 		c.formatName = name
@@ -389,4 +395,20 @@ func (s *StringSchema) Meta(fn func(m *MetaBuilder)) *StringSchema {
 	fn(b)
 	c.SetMeta(b.Build())
 	return c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *StringSchema) Error(msg string) *StringSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *StringSchema) ErrorFunc(fn func(issue *Issue) string) *StringSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
 }

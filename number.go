@@ -28,6 +28,7 @@ const (
 type numCheck[T NumberConstraint] struct {
 	kind numCheckKind
 	val  T
+	opts *checkOpts
 }
 
 // @spec REQ-PRIM-007
@@ -71,6 +72,7 @@ func (n *numberNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 			var zero T
 			return zero, false
 		}
+		mark := ctx.beginCheck(ch.opts)
 		switch ch.kind {
 		case checkGT:
 			if !(val > ch.val) {
@@ -131,6 +133,10 @@ func (n *numberNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 			}
 		}
 
+		if ctx.endCheck(mark, ch.opts) {
+			var zero T
+			return zero, false
+		}
 		if !allOk && ctx.shouldAbort() {
 			break
 		}
@@ -248,77 +254,77 @@ func Uint64() *NumberSchema[uint64] { return newNumberSchema[uint64]() }
 
 // @spec REQ-PRIM-007
 // GT enforces strict greater-than (val > min).
-func (s *NumberSchema[T]) GT(min T) *NumberSchema[T] {
+func (s *NumberSchema[T]) GT(min T, opts ...CheckOption) *NumberSchema[T] {
 	c := s.clone()
-	c.checks = append(c.checks, numCheck[T]{kind: checkGT, val: min})
+	c.checks = append(c.checks, numCheck[T]{kind: checkGT, val: min, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-007
 // GTE enforces greater-than-or-equal (val >= min).
-func (s *NumberSchema[T]) GTE(min T) *NumberSchema[T] {
+func (s *NumberSchema[T]) GTE(min T, opts ...CheckOption) *NumberSchema[T] {
 	c := s.clone()
-	c.checks = append(c.checks, numCheck[T]{kind: checkGTE, val: min})
+	c.checks = append(c.checks, numCheck[T]{kind: checkGTE, val: min, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-007
 // Min is an alias for GTE matching Zod v4.
-func (s *NumberSchema[T]) Min(min T) *NumberSchema[T] {
-	return s.GTE(min)
+func (s *NumberSchema[T]) Min(min T, opts ...CheckOption) *NumberSchema[T] {
+	return s.GTE(min, opts...)
 }
 
 // @spec REQ-PRIM-007
 // LT enforces strict less-than (val < max).
-func (s *NumberSchema[T]) LT(max T) *NumberSchema[T] {
+func (s *NumberSchema[T]) LT(max T, opts ...CheckOption) *NumberSchema[T] {
 	c := s.clone()
-	c.checks = append(c.checks, numCheck[T]{kind: checkLT, val: max})
+	c.checks = append(c.checks, numCheck[T]{kind: checkLT, val: max, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-007
 // LTE enforces less-than-or-equal (val <= max).
-func (s *NumberSchema[T]) LTE(max T) *NumberSchema[T] {
+func (s *NumberSchema[T]) LTE(max T, opts ...CheckOption) *NumberSchema[T] {
 	c := s.clone()
-	c.checks = append(c.checks, numCheck[T]{kind: checkLTE, val: max})
+	c.checks = append(c.checks, numCheck[T]{kind: checkLTE, val: max, opts: buildCheckOpts(opts)})
 	return c
 }
 
 // @spec REQ-PRIM-007
 // Max is an alias for LTE matching Zod v4.
-func (s *NumberSchema[T]) Max(max T) *NumberSchema[T] {
-	return s.LTE(max)
+func (s *NumberSchema[T]) Max(max T, opts ...CheckOption) *NumberSchema[T] {
+	return s.LTE(max, opts...)
 }
 
 // @spec REQ-PRIM-007
 // Positive enforces val > 0.
-func (s *NumberSchema[T]) Positive() *NumberSchema[T] {
-	return s.GT(0)
+func (s *NumberSchema[T]) Positive(opts ...CheckOption) *NumberSchema[T] {
+	return s.GT(0, opts...)
 }
 
 // @spec REQ-PRIM-007
 // NonNegative enforces val >= 0.
-func (s *NumberSchema[T]) NonNegative() *NumberSchema[T] {
-	return s.GTE(0)
+func (s *NumberSchema[T]) NonNegative(opts ...CheckOption) *NumberSchema[T] {
+	return s.GTE(0, opts...)
 }
 
 // @spec REQ-PRIM-007
 // Negative enforces val < 0.
-func (s *NumberSchema[T]) Negative() *NumberSchema[T] {
-	return s.LT(0)
+func (s *NumberSchema[T]) Negative(opts ...CheckOption) *NumberSchema[T] {
+	return s.LT(0, opts...)
 }
 
 // @spec REQ-PRIM-007
 // NonPositive enforces val <= 0.
-func (s *NumberSchema[T]) NonPositive() *NumberSchema[T] {
-	return s.LTE(0)
+func (s *NumberSchema[T]) NonPositive(opts ...CheckOption) *NumberSchema[T] {
+	return s.LTE(0, opts...)
 }
 
 // @spec REQ-PRIM-007
 // MultipleOf checks that value is evenly divisible by divisor.
-func (s *NumberSchema[T]) MultipleOf(divisor T) *NumberSchema[T] {
+func (s *NumberSchema[T]) MultipleOf(divisor T, opts ...CheckOption) *NumberSchema[T] {
 	c := s.clone()
-	c.checks = append(c.checks, numCheck[T]{kind: checkMultipleOf, val: divisor})
+	c.checks = append(c.checks, numCheck[T]{kind: checkMultipleOf, val: divisor, opts: buildCheckOpts(opts)})
 	return c
 }
 
@@ -361,6 +367,11 @@ func (n *bigIntNode) parse(ctx *parseCtx, in any) (any, bool) {
 		return big.NewInt(v), true
 	case int:
 		return big.NewInt(int64(v)), true
+	case float64:
+		if v == math.Trunc(v) && !math.IsInf(v, 0) {
+			bf, _ := new(big.Float).SetFloat64(v).Int(nil)
+			return bf, true
+		}
 	case json.Number:
 		bi := new(big.Int)
 		if _, ok := bi.SetString(string(v), 10); ok {
@@ -399,5 +410,37 @@ func (s *BigIntSchema) Meta(fn func(m *MetaBuilder)) *BigIntSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *NumberSchema[T]) Error(msg string) *NumberSchema[T] {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *NumberSchema[T]) ErrorFunc(fn func(issue *Issue) string) *NumberSchema[T] {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// Error sets a schema-level error message.
+func (s *BigIntSchema) Error(msg string) *BigIntSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{msg: msg}
+	return &c
+}
+
+// @spec REQ-PIPE-007
+// ErrorFunc sets a schema-level error function; returning "" falls through to the next level.
+func (s *BigIntSchema) ErrorFunc(fn func(issue *Issue) string) *BigIntSchema {
+	c := *s
+	c.meta.errOv = &errorOverride{fn: fn}
 	return &c
 }
