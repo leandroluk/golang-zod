@@ -47,13 +47,9 @@ type ISODateTimeOptions struct {
 // DateTime validates ISO 8601 / RFC 3339 date-time strings.
 func (isoNamespace) DateTime(opts ...ISODateTimeOptions) *StringSchema {
 	return String().WithCustomCheck("iso_datetime", func(s string) bool {
-		t, err := time.Parse(time.RFC3339, s)
-		if err == nil {
-			_ = t
-			return true
-		}
-		tNano, errNano := time.Parse(time.RFC3339Nano, s)
-		return errNano == nil && !tNano.IsZero()
+		// RFC 3339 parsing already accepts fractional seconds.
+		_, err := time.Parse(time.RFC3339, s)
+		return err == nil
 	})
 }
 

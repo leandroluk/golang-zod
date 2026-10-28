@@ -48,6 +48,7 @@ type StringSchema struct {
 	checks     []stringCheck
 	transforms []stringTransformKind
 	formatName string
+	coerce     bool
 }
 
 type stringNode struct {
@@ -250,8 +251,13 @@ func (s *StringSchema) clone() *StringSchema {
 		checks:     slices.Clone(s.checks),
 		transforms: slices.Clone(s.transforms),
 		formatName: s.formatName,
+		coerce:     s.coerce,
 	}
-	c.BaseSchema = NewBaseSchema[string](&stringNode{schema: c})
+	var n node = &stringNode{schema: c}
+	if c.coerce {
+		n = &coercedStringNode{inner: n}
+	}
+	c.BaseSchema = NewBaseSchema[string](n)
 	c.SetMeta(s.GetMeta())
 	return c
 }

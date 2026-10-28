@@ -18,9 +18,8 @@ var Coerce coerceNamespace
 // String coerces numbers, booleans, and other values into string before validation.
 func (coerceNamespace) String() *StringSchema {
 	s := String()
-	origNode := s.node()
-	coercedNode := &coercedStringNode{inner: origNode}
-	s.BaseSchema = NewBaseSchema[string](coercedNode)
+	s.coerce = true
+	s.BaseSchema = NewBaseSchema[string](&coercedStringNode{inner: s.node()})
 	return s
 }
 

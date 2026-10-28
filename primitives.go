@@ -82,11 +82,11 @@ func Null() *NullSchema {
 	}
 }
 
-func (s *NullSchema) Optional() OptionalSchema[any]     { return NewOptionalSchema[any](s) }
-func (s *NullSchema) Nullable() NullableSchema[any]     { return NewNullableSchema[any](s) }
-func (s *NullSchema) Nullish() NullishSchema[any]       { return NewNullishSchema[any](s) }
-func (s *NullSchema) Default(v any) DefaultSchema[any]  { return NewDefaultSchema[any](s, v) }
-func (s *NullSchema) Array() *ArraySchema[any]           { return NewArraySchema[any](s) }
+func (s *NullSchema) Optional() OptionalSchema[any]    { return NewOptionalSchema[any](s) }
+func (s *NullSchema) Nullable() NullableSchema[any]    { return NewNullableSchema[any](s) }
+func (s *NullSchema) Nullish() NullishSchema[any]      { return NewNullishSchema[any](s) }
+func (s *NullSchema) Default(v any) DefaultSchema[any] { return NewDefaultSchema[any](s, v) }
+func (s *NullSchema) Array() *ArraySchema[any]         { return NewArraySchema[any](s) }
 func (s *NullSchema) Meta(fn func(m *MetaBuilder)) *NullSchema {
 	c := *s
 	b := NewMetaBuilder(s.GetMeta())
@@ -189,13 +189,9 @@ func (n *dateNode) parse(ctx *parseCtx, in any) (any, bool) {
 	case time.Time:
 		return v, true
 	case string:
-		t, err := time.Parse(time.RFC3339, v)
-		if err == nil {
+		// RFC 3339 parsing already accepts fractional seconds.
+		if t, err := time.Parse(time.RFC3339, v); err == nil {
 			return t, true
-		}
-		tNano, errNano := time.Parse(time.RFC3339Nano, v)
-		if errNano == nil {
-			return tNano, true
 		}
 	}
 	ctx.addIssue(Issue{
