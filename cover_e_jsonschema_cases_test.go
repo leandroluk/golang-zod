@@ -40,7 +40,7 @@ var coverEJSCases = func() []coverEJSCase {
 	add("enum", z.Enum("A", "B"))
 	add("array", z.Array(z.Int()))
 	add("any nil node", &z.BaseSchema[any]{})
-	add("kind without mapping defaults to object", z.Record(z.String(), z.String()))
+	add("record string to string", z.Record(z.String(), z.String()))
 
 	// objects
 	obj := func() *z.ObjectSchema {

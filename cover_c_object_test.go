@@ -396,7 +396,7 @@ func TestCoverCObjectModifiers(t *testing.T) {
 func TestCoverCObjectNodeAccessorsViaExport(t *testing.T) {
 	cat := coverCObj().Catchall(z.Int())
 	js, err := z.ToJSONSchema(cat)
-	if err != nil || !strings.Contains(string(js), `"additionalProperties":{"type":"number"}`) {
+	if err != nil || !strings.Contains(string(js), `"additionalProperties":{"type":"integer"}`) {
 		t.Fatalf("%s %v", js, err)
 	}
 	strict, err := z.ToJSONSchema(coverCObj().Strict())

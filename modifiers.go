@@ -188,11 +188,13 @@ type PrefaultSchema[T any] struct {
 }
 
 type prefaultNode[T any] struct {
+	schema     AnySchema
 	inner      node
 	prefaultFn func() T
 }
 
-func (n *prefaultNode[T]) kind() nodeKind { return kindPrefault }
+func (n *prefaultNode[T]) kind() nodeKind    { return kindPrefault }
+func (n *prefaultNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *prefaultNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	if in == nil {
 		in = n.prefaultFn()
@@ -207,7 +209,7 @@ func NewPrefaultSchema[T any](inner Schema[T], prefaultValue T) PrefaultSchema[T
 
 // NewPrefaultFuncSchema creates a PrefaultSchema wrapping inner with a dynamic supplier.
 func NewPrefaultFuncSchema[T any](inner Schema[T], fn func() T) PrefaultSchema[T] {
-	node := &prefaultNode[T]{inner: inner.node(), prefaultFn: fn}
+	node := &prefaultNode[T]{inner: inner.node(), schema: inner, prefaultFn: fn}
 	return PrefaultSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,
@@ -229,11 +231,13 @@ type CatchSchema[T any] struct {
 }
 
 type catchNode[T any] struct {
+	schema  AnySchema
 	inner   node
 	catchFn func(issues []Issue) T
 }
 
-func (n *catchNode[T]) kind() nodeKind { return kindCatch }
+func (n *catchNode[T]) kind() nodeKind    { return kindCatch }
+func (n *catchNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *catchNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	initialIssuesLen := len(ctx.issues)
 	out, ok := n.inner.parse(ctx, in)
@@ -258,7 +262,7 @@ func NewCatchSchema[T any](inner Schema[T], fallback T) CatchSchema[T] {
 
 // NewCatchFuncSchema creates a CatchSchema with dynamic issue-aware fallback.
 func NewCatchFuncSchema[T any](inner Schema[T], fn func(issues []Issue) T) CatchSchema[T] {
-	node := &catchNode[T]{inner: inner.node(), catchFn: fn}
+	node := &catchNode[T]{inner: inner.node(), schema: inner, catchFn: fn}
 	return CatchSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,
@@ -279,17 +283,19 @@ type ReadonlySchema[T any] struct {
 }
 
 type readonlyNode[T any] struct {
-	inner node
+	schema AnySchema
+	inner  node
 }
 
-func (n *readonlyNode[T]) kind() nodeKind { return kindReadonly }
+func (n *readonlyNode[T]) kind() nodeKind    { return kindReadonly }
+func (n *readonlyNode[T]) Unwrap() AnySchema { return n.schema }
 func (n *readonlyNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	return n.inner.parse(ctx, in)
 }
 
 // NewReadonlySchema creates a ReadonlySchema wrapping inner.
 func NewReadonlySchema[T any](inner Schema[T]) ReadonlySchema[T] {
-	node := &readonlyNode[T]{inner: inner.node()}
+	node := &readonlyNode[T]{inner: inner.node(), schema: inner}
 	s := ReadonlySchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,
