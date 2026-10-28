@@ -200,12 +200,9 @@ func (n Nullable[T]) MarshalJSONTo(enc *jsontext.Encoder) error {
 // UnmarshalJSONFrom implements json.UnmarshalerFrom for encoding/json/v2 streaming.
 func (n *Nullable[T]) UnmarshalJSONFrom(dec *jsontext.Decoder) error {
 	if dec.PeekKind() == 'n' {
-		tok, err := dec.ReadToken()
-		if err != nil {
+		// PeekKind reported 'n', so the token read here is always the null literal.
+		if _, err := dec.ReadToken(); err != nil {
 			return err
-		}
-		if tok.Kind() != 'n' {
-			return fmt.Errorf("expected null, got %v", tok)
 		}
 		var zero T
 		n.val = zero
