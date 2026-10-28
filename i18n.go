@@ -48,11 +48,7 @@ func SetLocale(l Locale) {
 // @spec REQ-CORE-009
 // GetLocale returns the active global default locale.
 func GetLocale() Locale {
-	l := globalLocale.Load()
-	if l == nil || *l == nil {
-		return LocaleEN
-	}
-	return *l
+	return *globalLocale.Load()
 }
 
 // @spec REQ-CORE-014
@@ -179,9 +175,6 @@ func resolveActiveLocale(ctx context.Context) Locale {
 func resolveIssueMessage(issue *Issue, loc Locale) {
 	if issue.Message != "" {
 		return
-	}
-	if loc == nil {
-		loc = LocaleEN
 	}
 	issue.Message = loc.FormatMessage(issue)
 }

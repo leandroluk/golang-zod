@@ -18,7 +18,14 @@ type Meta struct {
 	Custom      map[string]any `json:"custom,omitempty"`
 
 	errOv *errorOverride
+
+	// lineage identifies the schema family that registered ID: clones derived from the same schema
+	// (via modifiers/checks) share it, so re-registering the same ID from a clone is not a duplicate.
+	lineage *metaLineage
 }
+
+// metaLineage is an opaque token identifying the origin of a registered schema ID.
+type metaLineage struct{ _ byte }
 
 // @spec REQ-CORE-010
 // MetaBuilder provides a fluent builder to configure schema metadata.
@@ -69,6 +76,9 @@ func NewMetaBuilder(current Meta) *MetaBuilder {
 // @spec REQ-CORE-010
 // ID sets the unique schema identifier.
 func (b *MetaBuilder) ID(id string) *MetaBuilder {
+	if id != b.meta.ID {
+		b.meta.lineage = nil
+	}
 	b.meta.ID = id
 	return b
 }

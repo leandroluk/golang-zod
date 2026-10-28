@@ -69,9 +69,6 @@ func WithAbortEarly(ctx context.Context) context.Context {
 }
 
 func isAbortEarly(ctx context.Context) bool {
-	if ctx == nil {
-		return false
-	}
 	key := getActiveAbortEarlyKey()
 	val := ctx.Value(key)
 	if val == nil {

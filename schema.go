@@ -57,8 +57,13 @@ func (s BaseSchema[T]) GetMeta() Meta {
 
 // SetMeta updates the schema metadata, validating non-empty ID uniqueness.
 func (s *BaseSchema[T]) SetMeta(m Meta) {
+	if m.ID != "" {
+		if m.lineage == nil {
+			m.lineage = &metaLineage{}
+		}
+		RegisterSchemaID(m.ID, m.lineage)
+	}
 	s.meta = m
-	RegisterSchemaID(m.ID, s)
 }
 
 // @spec REQ-CORE-002
