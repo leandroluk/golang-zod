@@ -33,7 +33,7 @@ var coverEJSCases = func() []coverEJSCase {
 	add("boolean", z.Boolean())
 	add("bytes", z.Bytes())
 	add("meta", z.String().Meta(func(m *z.MetaBuilder) {
-		m.Title("T").Describe("D").Deprecated(true).ReadOnly(true).Examples("a", "b")
+		m.Title("T").Description("D").Deprecated(true).ReadOnly(true).Examples("a", "b")
 	}))
 	add("literal single", z.Literal("a"))
 	add("literal multiple", z.Literal(1, 2, 3))

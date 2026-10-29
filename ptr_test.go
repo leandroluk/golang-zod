@@ -1,0 +1,46 @@
+package z_test
+
+import (
+	"strings"
+	"testing"
+	"time"
+
+	z "github.com/leandroluk/golang-zod"
+)
+
+type ptrEntity struct {
+	DeletedAt *time.Time `json:"deleted_at"`
+}
+
+func TestPtrStructField(t *testing.T) {
+	s := z.Struct(func(s *z.StructBuilder, e *ptrEntity) {
+		s.Field(&e.DeletedAt).Date().Ptr()
+	})
+	v, err := s.Parse(map[string]any{})
+	if err != nil || v.DeletedAt != nil {
+		t.Fatalf("absent: %+v %v", v, err)
+	}
+	v, err = s.Parse(map[string]any{"deleted_at": nil})
+	if err != nil || v.DeletedAt != nil {
+		t.Fatalf("null: %+v %v", v, err)
+	}
+	v, err = s.Parse(map[string]any{"deleted_at": "2025-01-01T00:00:00Z"})
+	if err != nil || v.DeletedAt == nil || v.DeletedAt.Year() != 2025 {
+		t.Fatalf("set: %+v %v", v, err)
+	}
+	if _, err = s.Parse(map[string]any{"deleted_at": "nope"}); err == nil {
+		t.Fatal("expected error")
+	}
+}
+
+func TestStructFieldTypeMismatchPanics(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil || !strings.Contains(r.(string), "use .Ptr()") {
+			t.Fatalf("expected mismatch panic, got %v", r)
+		}
+	}()
+	z.Struct(func(s *z.StructBuilder, e *ptrEntity) {
+		s.Field(&e.DeletedAt).Date().Optional()
+	})
+}

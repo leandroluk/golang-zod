@@ -471,7 +471,7 @@ func TestREQ_PRIM_009_ModifiersOnPrimitives(t *testing.T) {
 
 	t.Run("Meta on Number", func(t *testing.T) {
 		s := z.Int().Min(18).Meta(func(m *z.MetaBuilder) {
-			m.Title("User Age").Describe("Must be 18+")
+			m.Title("User Age").Description("Must be 18+")
 		})
 		meta := s.GetMeta()
 		if meta.Title != "User Age" || meta.Description != "Must be 18+" {

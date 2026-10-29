@@ -274,7 +274,7 @@ func TestGapXOverrideAppliesToDefinitions(t *testing.T) {
 
 // @spec REQ-EXP-002
 func TestGapXMetadataOption(t *testing.T) {
-	name := z.String().Meta(func(m *z.MetaBuilder) { m.Title("own").Describe("own desc").Custom("x-own", 1) })
+	name := z.String().Meta(func(m *z.MetaBuilder) { m.Title("own").Description("own desc").Custom("x-own", 1) })
 	plain := z.String()
 	flags := z.Int()
 	sch := z.Object(func(s *z.ObjectBuilder) {

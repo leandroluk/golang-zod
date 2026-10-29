@@ -412,7 +412,7 @@ func TestREQ_CORE_010_Meta(t *testing.T) {
 		b := z.NewMetaBuilder(z.Meta{})
 		b.ID("UserSchema").
 			Title("User Model").
-			Describe("Represents an authenticated user").
+			Description("Represents an authenticated user").
 			Examples(map[string]any{"name": "Alice"}).
 			Deprecated(false).
 			Custom("version", 1)
@@ -427,7 +427,7 @@ func TestREQ_CORE_010_Meta(t *testing.T) {
 
 		// Subsequent builder call starts from m1 and merges by default
 		b2 := z.NewMetaBuilder(m1)
-		b2.Describe("Updated description").
+		b2.Description("Updated description").
 			Examples(map[string]any{"name": "Bob"})
 
 		m2 := b2.Build()

@@ -93,13 +93,7 @@ func (b *MetaBuilder) Title(title string) *MetaBuilder {
 }
 
 // @spec REQ-CORE-010
-// Describe sets the description of the schema (Zod's .describe()).
-func (b *MetaBuilder) Describe(desc string) *MetaBuilder {
-	b.meta.Description = desc
-	return b
-}
-
-// Description sets the description of the schema.
+// Description sets the description of the schema (Zod's .describe()).
 func (b *MetaBuilder) Description(desc string) *MetaBuilder {
 	b.meta.Description = desc
 	return b

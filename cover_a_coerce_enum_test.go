@@ -246,7 +246,7 @@ func TestCoverAEnumModifiers(t *testing.T) {
 	if v, err := s.Array().Parse([]any{"x", "y"}); err != nil || len(v) != 2 {
 		t.Errorf("array: %v %v", v, err)
 	}
-	m := s.Meta(func(b *z.MetaBuilder) { b.Title("xy").Describe("two") })
+	m := s.Meta(func(b *z.MetaBuilder) { b.Title("xy").Description("two") })
 	if mm := m.GetMeta(); mm.Title != "xy" || mm.Description != "two" {
 		t.Errorf("meta: %+v", mm)
 	}

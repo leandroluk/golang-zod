@@ -13,6 +13,7 @@ type structSlot struct {
 	jsonName    string
 	schema      AnySchema
 	makeBinding func(sch AnySchema) structFieldBinding
+	fieldType   reflect.Type
 }
 
 // @spec REQ-OBJ-004
@@ -83,6 +84,7 @@ func (s *StructBuilder) Field[F any](p *F, sch ...Schema[F]) *StructFieldBuilder
 	slot := &structSlot{
 		fieldName:   matchedField.Name,
 		jsonName:    jsonName,
+		fieldType:   expectedType,
 		makeBinding: func(sch AnySchema) structFieldBinding {
 			return makeFieldBinding[F](jsonName, off, sch)
 		},
@@ -412,6 +414,9 @@ func Struct[T any](build func(s *StructBuilder, t *T)) *StructSchema[T] {
 		if slot.schema == nil {
 			panic(fmt.Sprintf("z.Struct: field %q registered without schema", slot.fieldName))
 		}
+		if out := schemaOutputType(slot.schema); out != nil && out != slot.fieldType {
+			panic(fmt.Sprintf("z.Struct: field %q has type %v but its schema produces %v (use .Ptr() for pointer fields, or declare the field as that type)", slot.fieldName, slot.fieldType, out))
+		}
 		fields = append(fields, slot.makeBinding(slot.schema))
 	}
 
@@ -581,4 +586,13 @@ func (s *StructSchema[T]) ErrorFunc(fn func(issue *Issue) string) *StructSchema[
 	c := *s
 	c.meta.errOv = &errorOverride{fn: fn}
 	return &c
+}
+
+// schemaOutputType returns the Go type a schema's Parse yields, or nil when it cannot be determined.
+func schemaOutputType(sch AnySchema) reflect.Type {
+	m, ok := reflect.TypeOf(sch).MethodByName("Parse")
+	if !ok || m.Type.NumOut() != 2 {
+		return nil
+	}
+	return m.Type.Out(0)
 }

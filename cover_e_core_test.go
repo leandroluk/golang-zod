@@ -241,7 +241,7 @@ func TestCoverEDeepPathSpill(t *testing.T) {
 // @spec REQ-CORE-010
 func TestCoverEMetaBuilder(t *testing.T) {
 	sch := z.String().Meta(func(m *z.MetaBuilder) {
-		m.Title("T").Describe("D").Examples("a").Examples("b").ReadOnly(true).Deprecated(true).Custom("k", 1).Custom("j", 2)
+		m.Title("T").Description("D").Examples("a").Examples("b").ReadOnly(true).Deprecated(true).Custom("k", 1).Custom("j", 2)
 	})
 	m := sch.GetMeta()
 	if m.Title != "T" || m.Description != "D" || !reflect.DeepEqual(m.Examples, []any{"a", "b"}) || !m.ReadOnly || !m.Deprecated ||

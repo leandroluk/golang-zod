@@ -350,7 +350,7 @@ base64Codec := z.Codec(z.String(), z.Bytes(),
 
 | Item no Zod TS                               | Status                                                                        | Motivo                                                                                     |
 | :------------------------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| `.describe("...")`                           | Vira método do builder de metadados                                           | `z.String().Meta(func(m *z.MetaBuilder){ m.Describe("...") })`.                            |
+| `.describe("...")`                           | Vira método do builder de metadados                                           | `z.String().Meta(func(m *z.MetaBuilder){ m.Description("...") })`.                            |
 | `formatError` (`Format()`)                   | Cortado                                                                       | Deprecated no Zod 4; use `Treeify`.                                                        |
 | `.unique()` em arrays                        | Não existe                                                                    | Não está no Zod 4.                                                                         |
 | `z.string().email()`                         | Cortado                                                                       | Top-level: `z.Email()`.                                                                    |
