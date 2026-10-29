@@ -181,17 +181,20 @@ type DateSchema struct {
 	BaseSchema[time.Time]
 }
 
-type dateNode struct{}
+type dateNode struct {
+	min *time.Time
+	max *time.Time
+}
 
 func (n *dateNode) kind() nodeKind { return kindDate }
 func (n *dateNode) parse(ctx *parseCtx, in any) (any, bool) {
 	switch v := in.(type) {
 	case time.Time:
-		return v, true
+		return v, n.checkRange(ctx, v)
 	case string:
 		// RFC 3339 parsing already accepts fractional seconds.
 		if t, err := time.Parse(time.RFC3339, v); err == nil {
-			return t, true
+			return t, n.checkRange(ctx, t)
 		}
 	}
 	ctx.addIssue(Issue{
@@ -457,5 +460,36 @@ func (s *LiteralSchema[T]) Error(msg string) *LiteralSchema[T] {
 func (s *LiteralSchema[T]) ErrorFunc(fn func(issue *Issue) string) *LiteralSchema[T] {
 	c := *s
 	c.meta.errOv = &errorOverride{fn: fn}
+	return &c
+}
+
+func (n *dateNode) checkRange(ctx *parseCtx, t time.Time) bool {
+	ok := true
+	if n.min != nil && t.Before(*n.min) {
+		ctx.addIssue(Issue{Code: TooSmall, Origin: "date", Minimum: *n.min, Inclusive: true, Input: t})
+		ok = false
+	}
+	if n.max != nil && t.After(*n.max) {
+		ctx.addIssue(Issue{Code: TooBig, Origin: "date", Maximum: *n.max, Inclusive: true, Input: t})
+		ok = false
+	}
+	return ok
+}
+
+// Min requires the date to be at or after t (Zod's `z.date().min(t)`).
+func (s *DateSchema) Min(t time.Time) *DateSchema {
+	c := *s
+	n := *s.innerNode.(*dateNode)
+	n.min = &t
+	c.innerNode = &n
+	return &c
+}
+
+// Max requires the date to be at or before t (Zod's `z.date().max(t)`).
+func (s *DateSchema) Max(t time.Time) *DateSchema {
+	c := *s
+	n := *s.innerNode.(*dateNode)
+	n.max = &t
+	c.innerNode = &n
 	return &c
 }

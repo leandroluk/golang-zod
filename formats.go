@@ -330,3 +330,62 @@ func CurrencyCode() *StringSchema {
 func StringFormat(name string, check func(string) bool) *StringSchema {
 	return String().WithCustomCheck(name, check)
 }
+
+var cuidReg = regexp.MustCompile(`^[cC][^\s-]{8,}$`)
+
+// CUID validates the legacy CUID (v1) format.
+func CUID() *StringSchema {
+	return String().WithCustomCheck("cuid", func(s string) bool {
+		return cuidReg.MatchString(s)
+	})
+}
+
+// HashAlgorithm names a digest algorithm accepted by Hash.
+type HashAlgorithm string
+
+// HashEncoding names how a digest is textually encoded.
+type HashEncoding string
+
+const (
+	MD5    HashAlgorithm = "md5"
+	SHA1   HashAlgorithm = "sha1"
+	SHA256 HashAlgorithm = "sha256"
+	SHA384 HashAlgorithm = "sha384"
+	SHA512 HashAlgorithm = "sha512"
+
+	HashHex       HashEncoding = "hex"
+	HashBase64    HashEncoding = "base64"
+	HashBase64URL HashEncoding = "base64url"
+)
+
+var hashBytes = map[HashAlgorithm]int{MD5: 16, SHA1: 20, SHA256: 32, SHA384: 48, SHA512: 64}
+
+// Hash validates a textual digest of the given algorithm; enc defaults to hex (Zod's `z.hash(alg, {enc})`).
+func Hash(alg HashAlgorithm, enc ...HashEncoding) *StringSchema {
+	e := HashHex
+	if len(enc) > 0 {
+		e = enc[0]
+	}
+	size, known := hashBytes[alg]
+	name := string(alg) + "_" + string(e)
+	return String().WithCustomCheck(name, func(s string) bool {
+		if !known {
+			return false
+		}
+		switch e {
+		case HashHex:
+			if len(s) != size*2 {
+				return false
+			}
+			_, err := hex.DecodeString(s)
+			return err == nil
+		case HashBase64:
+			b, err := base64.StdEncoding.DecodeString(s)
+			return err == nil && len(b) == size
+		case HashBase64URL:
+			b, err := base64.RawURLEncoding.DecodeString(s)
+			return err == nil && len(b) == size
+		}
+		return false
+	})
+}

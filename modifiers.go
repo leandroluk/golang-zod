@@ -164,7 +164,10 @@ type defaultNode[T any] struct {
 	inner     node
 	schema    AnySchema
 	defaultFn func() T
+	dynamic   bool
 }
+
+func (n *defaultNode[T]) isDynamicDefault() bool { return n.dynamic }
 
 func (n *defaultNode[T]) kind() nodeKind    { return kindDefault }
 func (n *defaultNode[T]) Unwrap() AnySchema { return n.schema }
@@ -177,12 +180,14 @@ func (n *defaultNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 
 // NewDefaultSchema creates a DefaultSchema wrapping inner with defaultValue.
 func NewDefaultSchema[T any](inner Schema[T], defaultValue T) DefaultSchema[T] {
-	return NewDefaultFuncSchema[T](inner, func() T { return defaultValue })
+	res := NewDefaultFuncSchema[T](inner, func() T { return defaultValue })
+	res.node().(*defaultNode[T]).dynamic = false
+	return res
 }
 
 // NewDefaultFuncSchema creates a DefaultSchema wrapping inner with a dynamic fallback supplier.
 func NewDefaultFuncSchema[T any](inner Schema[T], fn func() T) DefaultSchema[T] {
-	node := &defaultNode[T]{inner: inner.node(), schema: inner, defaultFn: fn}
+	node := &defaultNode[T]{inner: inner.node(), schema: inner, defaultFn: fn, dynamic: true}
 	res := DefaultSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,

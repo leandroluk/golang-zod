@@ -12,6 +12,22 @@ Go does not have a native `undefined` type. `golang-zod` defines precise presenc
 | `.Nullable()` | `z.Nullable[T]`         | Required           | `NullableNull[T]()`   |
 | `.Nullish()`  | `z.Option[Nullable[T]]` | `None`             | `Some(NullableNull)`  |
 | `.Default(v)` | `T`                     | Evaluates fallback | Fails unless Nullable |
+| `.DefaultFunc(fn)` | `T`                 | Calls `fn` on every absent value | Fails unless Nullable |
+| `.Prefault(v)` / `.PrefaultFunc(fn)` | `T`      | Replaces input, then validates it | Fails unless Nullable |
+| `.Catch(v)` / `.CatchFunc(fn)` | `T`            | Fallback on any failure | Fallback |
+| `.Readonly()` | `T`                     | Same as inner      | Same as inner         |
+
+### Dynamic defaults
+
+`Default` takes a fixed value; `DefaultFunc` takes a supplier that runs on every absent input, which is what you want for generated values (Zod's `.default(() => ...)`):
+
+```go
+id := z.UUID().DefaultFunc(func() string { return uuid.NewString() })
+
+createdAt := z.Date().DefaultFunc(time.Now)
+```
+
+Supplier-based defaults are not exported as a `default` keyword in JSON Schema, since they have no stable value.
 
 ### Unpacking `Option[T]` and `Nullable[T]`
 

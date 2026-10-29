@@ -697,7 +697,9 @@ func (ctx *schemaGenCtx) build(n node, k nodeKind, meta Meta, path string) (res 
 			if err != nil {
 				return nil, false, err
 			}
-			if v := df.jsonSchemaDefault(); jsonRepresentable(v) {
+			if d, ok := n.(interface{ isDynamicDefault() bool }); ok && d.isDynamicDefault() {
+				// Supplier-based defaults (e.g. generated UUIDs) have no stable value to export.
+			} else if v := df.jsonSchemaDefault(); jsonRepresentable(v) {
 				res = ctx.annotate(res, map[string]any{"default": v})
 			} else if ctx.opts.Unrepresentable == UnrepresentableThrow {
 				return nil, false, fmt.Errorf("golang-zod: unrepresentable default value at %q", path)

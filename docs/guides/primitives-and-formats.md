@@ -43,12 +43,15 @@ z.URL()         // RFC-compliant URL
 z.IPv4()        // IPv4 dotted address
 z.IPv6()        // IPv6 address
 z.CreditCard()  // Valid Luhn checksum number
+z.CUID()        // CUID (v1) format
 z.CUID2()       // CUID2 format
 z.ULID()        // ULID format
 z.Base64()      // Standard Base64 encoded string
 z.Hex()         // Hexadecimal encoded string
 z.Emoji()       // Unicode emoji sequence
 z.JWT()         // Three-part JSON Web Token
+z.Hash(z.SHA256)                 // Hex digest (also z.MD5, z.SHA1, z.SHA384, z.SHA512)
+z.Hash(z.SHA256, z.HashBase64)  // Base64 / base64url encoded digest
 ```
 
 ### ISO Date & Time Formats
@@ -73,6 +76,12 @@ z.Int().
 	MultipleOf(5). // Must be divisible by 5
 	Positive().    // > 0
 	NonNegative()  // >= 0
+```
+
+## Dates
+
+```go
+z.Date().Min(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)).Max(time.Now())
 ```
 
 ## Type Coercion
