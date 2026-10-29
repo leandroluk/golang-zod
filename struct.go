@@ -414,7 +414,10 @@ func Struct[T any](build func(s *StructBuilder, t *T)) *StructSchema[T] {
 		if slot.schema == nil {
 			panic(fmt.Sprintf("z.Struct: field %q registered without schema", slot.fieldName))
 		}
-		if out := schemaOutputType(slot.schema); out != nil && out != slot.fieldType {
+		if out := schemaOutputType(slot.schema); out != nil && out != slot.fieldType && slot.fieldType.Kind() == reflect.Pointer && slot.fieldType.Elem() == out {
+			// A *T field with a T schema: nil is allowed (absent or null), as in Go pointer semantics.
+			slot.schema = &autoPtrSchema{inner: slot.schema, ptrType: slot.fieldType}
+		} else if out != nil && out != slot.fieldType {
 			panic(fmt.Sprintf("z.Struct: field %q has type %v but its schema produces %v (use .Ptr() for pointer fields, or declare the field as that type)", slot.fieldName, slot.fieldType, out))
 		}
 		fields = append(fields, slot.makeBinding(slot.schema))
@@ -595,4 +598,37 @@ func schemaOutputType(sch AnySchema) reflect.Type {
 		return nil
 	}
 	return m.Type.Out(0)
+}
+
+// autoPtrSchema adapts a schema producing T to a struct field declared as *T:
+// absent or null input yields nil, anything else a pointer to the parsed value.
+type autoPtrSchema struct {
+	inner   AnySchema
+	ptrType reflect.Type
+}
+
+func (s *autoPtrSchema) GetMeta() Meta { return s.inner.GetMeta() }
+func (s *autoPtrSchema) node() node {
+	return &autoPtrNode{inner: s.inner.node(), schema: s.inner, ptrType: s.ptrType}
+}
+
+type autoPtrNode struct {
+	inner   node
+	schema  AnySchema
+	ptrType reflect.Type
+}
+
+func (n *autoPtrNode) kind() nodeKind    { return kindNullish }
+func (n *autoPtrNode) Unwrap() AnySchema { return n.schema }
+func (n *autoPtrNode) parse(ctx *parseCtx, in any) (any, bool) {
+	if in == nil {
+		return reflect.Zero(n.ptrType).Interface(), true
+	}
+	out, ok := n.inner.parse(ctx, in)
+	if !ok {
+		return nil, false
+	}
+	p := reflect.New(n.ptrType.Elem())
+	p.Elem().Set(reflect.ValueOf(out))
+	return p.Interface(), true
 }

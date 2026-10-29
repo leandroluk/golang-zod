@@ -31,13 +31,13 @@ Supplier-based defaults are not exported as a `default` keyword in JSON Schema, 
 
 ### Pointer fields
 
-For idiomatic nullable struct fields such as `DeletedAt *time.Time`, use `.Ptr()` (or `z.Ptr(s)`): absent and `null` yield `nil`, anything else yields a pointer to the parsed value.
+A struct field declared as a pointer, such as `DeletedAt *time.Time`, already allows `nil`: bind it with the plain schema and an absent or `null` key yields `nil`, anything else a pointer to the parsed value. No `Optional()` needed.
 
 ```go
-s.Field(&e.DeletedAt).Date().Ptr()
+s.Field(&e.DeletedAt).Date()
 ```
 
-`Optional()` yields `z.Option[T]` and `Nullable()` yields `z.Nullable[T]`, so the field must be declared with that type. `z.Struct` panics at construction when a field type does not match what its schema produces.
+`z.Ptr(s)` / `.Ptr()` do the same explicitly. `Optional()` yields `z.Option[T]` and `Nullable()` yields `z.Nullable[T]`, so a field using them must be declared with that type; `z.Struct` panics at construction when a field type does not match what its schema produces.
 
 ### Unpacking `Option[T]` and `Nullable[T]`
 
