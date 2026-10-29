@@ -75,7 +75,7 @@ func (s BaseSchema[T]) updateSlot(newSch AnySchema) {
 }
 
 func (s *BaseSchema[T]) setMeta(m Meta) {
-	if m.ID != "" {
+	if m.ID != "" && !m.isDefaultID {
 		if m.lineage == nil {
 			m.lineage = &metaLineage{}
 		}

@@ -420,6 +420,10 @@ func Struct[T any](build func(s *StructBuilder, t *T)) *StructSchema[T] {
 		isStrict: false,
 	}
 	s.BaseSchema = NewBaseSchema[T](&structNode[T]{schema: s})
+	if name := tType.Name(); name != "" {
+		s.meta.ID = name
+		s.meta.isDefaultID = true
+	}
 	return s
 }
 

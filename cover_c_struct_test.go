@@ -314,7 +314,7 @@ func TestCoverCStructModifiersAndNesting(t *testing.T) {
 	if m := withMeta.GetMeta(); m.ID != "coverC_struct_meta" || m.Title != "U" {
 		t.Fatalf("meta: %+v", m)
 	}
-	if sch.GetMeta().ID != "" {
+	if sch.GetMeta().ID != "CoverCUser" {
 		t.Fatal("Meta must not mutate the receiver")
 	}
 

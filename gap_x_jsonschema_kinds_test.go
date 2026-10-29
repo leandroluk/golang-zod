@@ -242,11 +242,11 @@ func TestGapXStructExport(t *testing.T) {
 		`"name":{"type":"string"},"role":{"type":"string"},"tag":{"type":"string"}}`
 	gapXRun(t, []gapXCase{
 		{"strip output", gapXUserSchema(), nil,
-			gapXD2020 + `"additionalProperties":false,` + props + `,"required":["age","bio","name"],"type":"object"}`},
+			`{"$defs":{"gapXUser":{"additionalProperties":false,` + props + `,"required":["age","bio","name"],"type":"object"}},"$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,` + props + `,"required":["age","bio","name"],"type":"object"}`},
 		{"strip input", gapXUserSchema(), gapXOpts(z.WithIO(z.Input)),
-			gapXD2020 + props + `,"required":["age","name"],"type":"object"}`},
+			`{"$defs":{"gapXUser":{` + props + `,"required":["age","name"],"type":"object"}},"$schema":"https://json-schema.org/draft/2020-12/schema",` + props + `,"required":["age","name"],"type":"object"}`},
 		{"strict input", gapXUserSchema().Strict(), gapXOpts(z.WithIO(z.Input)),
-			gapXD2020 + `"additionalProperties":false,` + props + `,"required":["age","name"],"type":"object"}`},
+			`{"$defs":{"gapXUser":{"additionalProperties":false,` + props + `,"required":["age","name"],"type":"object"}},"$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,` + props + `,"required":["age","name"],"type":"object"}`},
 		{"empty struct", z.Struct[struct{}](func(s *z.StructBuilder, u *struct{}) {}), nil,
 			gapXD2020 + `"additionalProperties":false,"type":"object"}`},
 	})

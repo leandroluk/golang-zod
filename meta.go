@@ -21,7 +21,8 @@ type Meta struct {
 
 	// lineage identifies the schema family that registered ID: clones derived from the same schema
 	// (via modifiers/checks) share it, so re-registering the same ID from a clone is not a duplicate.
-	lineage *metaLineage
+	lineage     *metaLineage
+	isDefaultID bool
 }
 
 // metaLineage is an opaque token identifying the origin of a registered schema ID.
@@ -76,6 +77,7 @@ func NewMetaBuilder(current Meta) *MetaBuilder {
 // @spec REQ-CORE-010
 // ID sets the unique schema identifier.
 func (b *MetaBuilder) ID(id string) *MetaBuilder {
+	b.meta.isDefaultID = false
 	if id != b.meta.ID {
 		b.meta.lineage = nil
 	}

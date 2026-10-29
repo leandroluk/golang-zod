@@ -146,7 +146,7 @@ func TestGapYGraphQLDefaultAndStructFields(t *testing.T) {
 	}
 	st := z.Struct[gapYS](func(s *z.StructBuilder, v *gapYS) { s.Field(&v.N, z.String()) })
 	got, err = z.ToGraphQLSDL(z.Union(st))
-	if err != nil || got != "union Query = QueryOption1\n\ntype QueryOption1 {\n  n: String!\n}" {
+	if err != nil || got != "union Query = gapYS\n\ntype gapYS {\n  n: String!\n}" {
 		t.Fatalf("got %q, %v", got, err)
 	}
 }

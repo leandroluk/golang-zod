@@ -148,3 +148,33 @@ func TestMetaAndGetMeta(t *testing.T) {
 		t.Errorf("unexpected object meta: %+v", objMeta)
 	}
 }
+
+func TestStructDefaultMetaIDAndOverride(t *testing.T) {
+	// 1. Default Meta.ID equals struct name
+	userSchema := z.Struct(func(s *z.StructBuilder, u *RedesignUser) {
+		s.Field(&u.Name).String()
+	})
+
+	meta := z.GetMeta(userSchema)
+	if meta.ID != "RedesignUser" {
+		t.Fatalf("expected default Meta.ID %q, got %q", "RedesignUser", meta.ID)
+	}
+
+	// 2. Overwriting ID via .Meta(m.ID(...))
+	overridden := userSchema.Meta(func(m *z.MetaBuilder) {
+		m.ID("CustomUserProfile").Title("User Profile")
+	})
+
+	oMeta := z.GetMeta(overridden)
+	if oMeta.ID != "CustomUserProfile" {
+		t.Fatalf("expected overridden Meta.ID %q, got %q", "CustomUserProfile", oMeta.ID)
+	}
+	if oMeta.Title != "User Profile" {
+		t.Fatalf("expected Title %q, got %q", "User Profile", oMeta.Title)
+	}
+
+	// Original receiver must remain unchanged
+	if orig := z.GetMeta(userSchema).ID; orig != "RedesignUser" {
+		t.Fatalf("expected original Meta.ID to remain %q, got %q", "RedesignUser", orig)
+	}
+}
