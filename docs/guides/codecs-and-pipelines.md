@@ -91,3 +91,12 @@ sb := z.StringBool(
 val, _ := sb.DecodeValue("SIM") // true
 str, _ := sb.Encode(true)        // "yes" (first truthy item)
 ```
+
+## Inverting a codec
+
+`z.InvertCodec(c)` swaps the directions of a codec: the output schema becomes the input and `Encode`/`Parse` trade places.
+
+```go
+inv := z.InvertCodec(intFromString) // *CodecSchema[int, string]
+s, _ := inv.Parse(5)                // "5"
+```

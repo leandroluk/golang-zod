@@ -96,3 +96,20 @@ z.Coerce.Boolean()  // "true", 1 -> true
 z.Coerce.Date()     // "2026-01-01T00:00:00Z" -> time.Time
 z.Coerce.BigInt()   // "999999999999999999" -> *big.Int
 ```
+
+## Additional Zod Parity Schemas
+
+```go
+z.NaN()                                   // only NaN
+z.JSON()                                  // any JSON-compatible value
+z.CustomFn[int](func(v any) bool { ... }) // predicate-based schema (z.custom)
+z.Success(z.Int())                        // yields true/false instead of failing
+z.NonOptional[string](z.String().Optional())
+z.TemplateLiteral("user-", z.Int(), "@", z.Enum("a", "b"))
+z.Int().Step(5)                           // alias of MultipleOf
+z.Int64().Safe()                          // within ±(2^53-1)
+```
+
+`TemplateLiteral` accepts string literals, `z.String()`, `z.Boolean()`, `z.Enum(...)`, `z.Literal(...)` of strings/ints and `z.Int()`/`z.Int64()`/`z.Float64()`.
+`z.Float64().Finite()` is a no-op: number schemas already reject `NaN` and `±Inf`.
+`String().Normalize()` is intentionally not provided, since Unicode normalization needs `golang.org/x/text` and the module has no dependencies.
