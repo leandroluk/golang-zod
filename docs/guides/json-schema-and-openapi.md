@@ -5,15 +5,15 @@
 ## Exporting JSON Schema (`z.ToJSONSchema`)
 
 ```go
-userSchema := z.Object(func(s *z.Shape) {
-	s.Field("id", z.UUID())
-	s.Field("name", z.String().Min(2))
-	s.Field("email", z.Email())
-	s.Field("bio", z.String().Optional())
+userSchema := z.Object(func(s *z.ObjectBuilder) {
+	s.Field("id").UUID()
+	s.Field("name").String().Min(2)
+	s.Field("email").Email()
+	s.Field("bio").String().Optional()
 }).Meta(func(m *z.MetaBuilder) {
 	m.ID("User").
 		Title("User Account").
-		Describe("Public profile information")
+		Description("Public profile information")
 })
 
 // Export to Draft 2020-12 (default)

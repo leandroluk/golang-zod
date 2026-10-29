@@ -10,7 +10,7 @@ import (
 )
 
 func coverCObj() *z.ObjectSchema {
-	return z.Object(func(s *z.Shape) {
+	return z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", z.String())
 		s.Field("b", z.Int())
 	})
@@ -19,7 +19,7 @@ func coverCObj() *z.ObjectSchema {
 // @spec REQ-OBJ-001
 func TestCoverCObjectDuplicateFieldPanics(t *testing.T) {
 	coverCMustPanic(t, `duplicate field "a"`, func() {
-		z.Object(func(s *z.Shape) {
+		z.Object(func(s *z.ObjectBuilder) {
 			s.Field("a", z.String())
 			s.Field("a", z.Int())
 		})
@@ -28,7 +28,7 @@ func TestCoverCObjectDuplicateFieldPanics(t *testing.T) {
 
 // @spec REQ-OBJ-001 REQ-OBJ-003
 func TestCoverCObjectParse(t *testing.T) {
-	obj := z.Object(func(s *z.Shape) {
+	obj := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("req", z.String())
 		s.Field("opt", z.String().Optional())
 		s.Field("nul", z.String().Nullish())
@@ -138,7 +138,7 @@ func TestCoverCObjectCancelledMidParse(t *testing.T) {
 		cancel()
 		return "ok", true
 	})
-	o := z.Object(func(s *z.Shape) {
+	o := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", canceller)
 		s.Field("b", z.String())
 	})
@@ -160,7 +160,7 @@ func TestCoverCObjectUnknownKeyModes(t *testing.T) {
 		}
 	})
 	t.Run("StrictObject constructor", func(t *testing.T) {
-		o := z.StrictObject(func(s *z.Shape) { s.Field("a", z.String()) })
+		o := z.StrictObject(func(s *z.ObjectBuilder) { s.Field("a", z.String()) })
 		if _, err := o.Parse(map[string]any{"a": "x", "q": 1}); err == nil {
 			t.Fatal("expected strict failure")
 		}
@@ -175,7 +175,7 @@ func TestCoverCObjectUnknownKeyModes(t *testing.T) {
 		}
 	})
 	t.Run("LooseObject constructor", func(t *testing.T) {
-		o := z.LooseObject(func(s *z.Shape) { s.Field("a", z.String()) })
+		o := z.LooseObject(func(s *z.ObjectBuilder) { s.Field("a", z.String()) })
 		out, err := o.Parse(map[string]any{"a": "x", "q": 1})
 		if err != nil || out["q"] != 1 {
 			t.Fatalf("got %v %v", out, err)
@@ -233,7 +233,7 @@ func TestCoverCObjectShapeOps(t *testing.T) {
 	})
 
 	t.Run("extend replaces and appends, inherits mode, leaves original intact", func(t *testing.T) {
-		ext := base.Strict().Extend(func(s *z.Shape) {
+		ext := base.Strict().Extend(func(s *z.ObjectBuilder) {
 			s.Field("a", z.Int())
 			s.Field("c", z.Boolean())
 		})
@@ -300,7 +300,7 @@ func TestCoverCObjectShapeOps(t *testing.T) {
 	})
 
 	t.Run("partial on already optional field keeps it", func(t *testing.T) {
-		o := z.Object(func(s *z.Shape) { s.Field("o", z.String().Optional()) }).Partial()
+		o := z.Object(func(s *z.ObjectBuilder) { s.Field("o", z.String().Optional()) }).Partial()
 		out, err := o.Parse(map[string]any{"o": "v"})
 		if err != nil {
 			t.Fatal(err)
@@ -312,7 +312,7 @@ func TestCoverCObjectShapeOps(t *testing.T) {
 
 	t.Run("partial wrapper exposes inner meta", func(t *testing.T) {
 		withMeta := z.String().Meta(func(m *z.MetaBuilder) { m.Title("coverC title") })
-		o := z.Object(func(s *z.Shape) { s.Field("t", withMeta) }).Partial()
+		o := z.Object(func(s *z.ObjectBuilder) { s.Field("t", withMeta) }).Partial()
 		if got := o.FieldSchema("t").GetMeta().Title; got != "coverC title" {
 			t.Fatalf("got %q", got)
 		}

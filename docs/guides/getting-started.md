@@ -24,10 +24,10 @@ import (
 
 func main() {
 	// Define schema
-	schema := z.Object(func(s *z.Shape) {
-		s.Field("name", z.String().Min(2))
-		s.Field("age", z.Int().GTE(0))
-		s.Field("email", z.Email())
+	schema := z.Object(func(s *z.ObjectBuilder) {
+		s.Field("name").String().Min(2)
+		s.Field("age").Int().GTE(0)
+		s.Field("email").Email()
 	})
 
 	// Parse input map

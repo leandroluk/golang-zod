@@ -22,7 +22,7 @@ type TestUser struct {
 // @spec REQ-OBJ-001 REQ-OBJ-002 REQ-OBJ-003
 func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 	t.Run("REQ-OBJ-001: Object strip by default", func(t *testing.T) {
-		schema := z.Object(func(s *z.Shape) {
+		schema := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 			s.Field("age", z.Int())
 		})
@@ -46,7 +46,7 @@ func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 	})
 
 	t.Run("REQ-OBJ-001: StrictObject rejects unknown keys", func(t *testing.T) {
-		schema := z.StrictObject(func(s *z.Shape) {
+		schema := z.StrictObject(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 		})
 
@@ -68,7 +68,7 @@ func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 	})
 
 	t.Run("REQ-OBJ-001: LooseObject preserves unknown keys", func(t *testing.T) {
-		schema := z.LooseObject(func(s *z.Shape) {
+		schema := z.LooseObject(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 		})
 
@@ -85,12 +85,12 @@ func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 	})
 
 	t.Run("REQ-OBJ-002: Extend, Pick, Omit, Partial, Required, Keyof", func(t *testing.T) {
-		base := z.Object(func(s *z.Shape) {
+		base := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("a", z.String())
 			s.Field("b", z.Int())
 		})
 
-		extended := base.Extend(func(s *z.Shape) {
+		extended := base.Extend(func(s *z.ObjectBuilder) {
 			s.Field("c", z.Boolean())
 		})
 
@@ -151,7 +151,7 @@ func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 	})
 
 	t.Run("REQ-OBJ-003: Catchall schema", func(t *testing.T) {
-		schema := z.Object(func(s *z.Shape) {
+		schema := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 		}).Catchall(z.Int())
 
@@ -179,7 +179,7 @@ func TestREQ_OBJ_001_002_003_Objects(t *testing.T) {
 // @spec REQ-OBJ-004 REQ-OBJ-006 REQ-OBJ-007
 func TestREQ_OBJ_004_006_007_Struct(t *testing.T) {
 	t.Run("REQ-OBJ-004 & REQ-OBJ-006: Struct validation with unsafe zero-reflect runtime", func(t *testing.T) {
-		userSchema := z.Struct[TestUser](func(s *z.StructShape, u *TestUser) {
+		userSchema := z.Struct(func(s *z.StructBuilder, u *TestUser) {
 			s.Field(&u.ID, z.Int())
 			s.Field(&u.Name, z.String())
 			s.Field(&u.Email, z.Email())
@@ -214,7 +214,7 @@ func TestREQ_OBJ_004_006_007_Struct(t *testing.T) {
 					t.Fatal("expected panic on non-struct T")
 				}
 			}()
-			z.Struct[int](func(s *z.StructShape, i *int) {})
+			z.Struct(func(s *z.StructBuilder, i *int) {})
 		}()
 
 		// Field pointer nil
@@ -224,8 +224,8 @@ func TestREQ_OBJ_004_006_007_Struct(t *testing.T) {
 					t.Fatal("expected panic on nil field pointer")
 				}
 			}()
-			z.Struct[TestUser](func(s *z.StructShape, u *TestUser) {
-				s.Field[int](nil, z.Int())
+			z.Struct(func(s *z.StructBuilder, u *TestUser) {
+				s.Field(nil, z.Int())
 			})
 		}()
 	})

@@ -25,11 +25,11 @@ type CreateUserRequest struct {
 }
 
 // 2. Compile Schema with Zero-Reflect Runtime Performance
-var CreateUserSchema = z.Struct[CreateUserRequest](func(s *z.StructShape, u *CreateUserRequest) {
-	s.Field(&u.Name, z.String().Min(2).Trim())
-	s.Field(&u.Email, z.Email())
-	s.Field(&u.Age, z.Int().GTE(18))
-	s.Field(&u.Password, z.String().Min(8))
+var CreateUserSchema = z.Struct[CreateUserRequest](func(s *z.StructBuilder, u *CreateUserRequest) {
+	s.Field(&u.Name).String().Min(2).Trim()
+	s.Field(&u.Email).Email()
+	s.Field(&u.Age).Int().GTE(18)
+	s.Field(&u.Password).String().Min(8)
 })
 
 // 3. HTTP Handler with Accept-Language Negotiation

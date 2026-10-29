@@ -9,13 +9,13 @@ import (
 )
 
 func gapXSharedObj() *z.ObjectSchema {
-	return z.Object(func(s *z.Shape) { s.Field("v", z.String()) })
+	return z.Object(func(s *z.ObjectBuilder) { s.Field("v", z.String()) })
 }
 
 const gapXObjDef = `{"additionalProperties":false,"properties":{"v":{"type":"string"}},"required":["v"],"type":"object"}`
 
 func gapXTwice(shared z.AnySchema) *z.ObjectSchema {
-	return z.Object(func(s *z.Shape) {
+	return z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", shared)
 		s.Field("b", shared)
 	})
@@ -53,7 +53,7 @@ func TestGapXReusedRefMovesSharedSchemasToDefs(t *testing.T) {
 		{"explicit inline", gapXTwice(gapXSharedObj()), gapXOpts(z.WithReused(z.ReusedInline)),
 			gapXD2020 + `"additionalProperties":false,"properties":{"a":` + gapXObjDef + `,"b":` + gapXObjDef +
 				`},"required":["a","b"],"type":"object"}`},
-		{"used once stays inline", z.Object(func(s *z.Shape) { s.Field("a", gapXSharedObj()) }), ref,
+		{"used once stays inline", z.Object(func(s *z.ObjectBuilder) { s.Field("a", gapXSharedObj()) }), ref,
 			gapXD2020 + `"additionalProperties":false,"properties":{"a":` + gapXObjDef + `},"required":["a"],"type":"object"}`},
 		{"URI maps generated names", gapXTwice(gapXSharedObj()),
 			gapXOpts(z.WithReused(z.ReusedRef), z.WithURI(func(id string) string { return "https://x.test/" + id })),
@@ -67,7 +67,7 @@ func TestGapXReusedRefMovesSharedSchemasToDefs(t *testing.T) {
 func TestGapXReusedRefNamingAndNesting(t *testing.T) {
 	str := z.String()
 	num := z.Int()
-	three := z.Object(func(s *z.Shape) {
+	three := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", str)
 		s.Field("b", num)
 		s.Field("c", str)
@@ -85,11 +85,11 @@ func TestGapXReusedRefNamingAndNesting(t *testing.T) {
 
 	// a reused schema that itself contains a reused schema
 	inner := z.String()
-	outer := z.Object(func(s *z.Shape) {
+	outer := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("x", inner)
 		s.Field("y", inner)
 	})
-	root := z.Object(func(s *z.Shape) {
+	root := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("p", outer)
 		s.Field("q", outer)
 	})
@@ -107,7 +107,7 @@ func TestGapXReusedRefNamingAndNesting(t *testing.T) {
 func TestGapXReusedRefThroughWrappers(t *testing.T) {
 	shared := z.String()
 	obj := func(a, b z.AnySchema) z.AnySchema {
-		return z.Object(func(s *z.Shape) {
+		return z.Object(func(s *z.ObjectBuilder) {
 			s.Field("a", a)
 			s.Field("b", b)
 		})
@@ -160,7 +160,7 @@ func TestGapXReusedRefPrePassReportsErrors(t *testing.T) {
 
 func gapXTree() z.Schema[z.Dyn] {
 	var tree *z.ObjectSchema
-	tree = z.Object(func(s *z.Shape) {
+	tree = z.Object(func(s *z.ObjectBuilder) {
 		s.Field("name", z.String())
 		s.Field("kids", z.Array(z.Lazy(func() z.Schema[z.Dyn] { return tree })))
 	})
@@ -197,7 +197,7 @@ func TestGapXRecursiveSchemaWithoutID(t *testing.T) {
 // @spec REQ-EXP-003
 func TestGapXLazyReusedWithoutCycle(t *testing.T) {
 	lazy := z.Lazy(func() z.Schema[string] { return z.String() })
-	root := z.Object(func(s *z.Shape) {
+	root := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", lazy)
 		s.Field("b", lazy)
 	})
@@ -226,7 +226,7 @@ func TestGapXReusedRefKeepsIDSemantics(t *testing.T) {
 // @spec REQ-EXP-001
 func TestGapXOverrideWith(t *testing.T) {
 	var seen []string
-	sch := z.Object(func(s *z.Shape) {
+	sch := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("name", z.String())
 		s.Field("tags", z.Array(z.String()).Optional())
 		s.Field("n", z.Int().Default(1))
@@ -277,7 +277,7 @@ func TestGapXMetadataOption(t *testing.T) {
 	name := z.String().Meta(func(m *z.MetaBuilder) { m.Title("own").Describe("own desc").Custom("x-own", 1) })
 	plain := z.String()
 	flags := z.Int()
-	sch := z.Object(func(s *z.Shape) {
+	sch := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("name", name)
 		s.Field("plain", plain)
 		s.Field("flags", flags)

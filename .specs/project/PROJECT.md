@@ -3,7 +3,7 @@
 Traceability: on
 
 ## Vision
-A complete, idiomatic Go port of **Zod v4** with maximum API compatibility with `colinhacks/zod`. Validation rules live in Go code (a fluent DSL), never in struct tags. Two builder constructors: `z.Object(func(s *z.Shape))` with `s.Field("name", schema)` (output `map[string]any`), and `z.Struct[T](func(s *z.StructShape, t *T))` with `s.Field(&t.Foo, schema)` (typed output, compile-time checked, no reflection at parse time). A mandatory `json:"name"` tag is the key of every struct field (KISS); There is no `ParseInto`. No `z.Shape{...}` map literal. Target toolchain: **Go 1.27.1** (generic methods available; see `INSIGHT.md` §0 for what the compiler accepts).
+A complete, idiomatic Go port of **Zod v4** with maximum API compatibility with `colinhacks/zod`. Validation rules live in Go code (a fluent DSL), never in struct tags. Two builder constructors: `z.Object(func(s *z.ObjectBuilder))` with `s.Field("name", schema)` (output `map[string]any`), and `z.Struct[T](func(s *z.StructBuilder, t *T))` with `s.Field(&t.Foo, schema)` (typed output, compile-time checked, no reflection at parse time). A mandatory `json:"name"` tag is the key of every struct field (KISS); There is no `ParseInto`. No `z.ObjectBuilder{...}` map literal. Target toolchain: **Go 1.27.1** (generic methods available; see `INSIGHT.md` §0 for what the compiler accepts).
 
 ## Core Principles
 1. **Zod v4 pure API**: all string formats and number kinds top-level (`z.Email()`, `z.UUID()`, `z.ISO.DateTime()`, `z.Int()`); no v3 legacy (`.merge()`, `z.string().email()`).

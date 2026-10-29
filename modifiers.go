@@ -35,13 +35,25 @@ func (n *optionalNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	return None[T](), false
 }
 
+func inheritSlot(res interface{ setSlot(*AnySchema); updateSlot(AnySchema) }, inner any, self AnySchema) {
+	if b, ok := inner.(interface{ getSlot() *AnySchema }); ok {
+		s := b.getSlot()
+		if s != nil {
+			res.setSlot(s)
+			res.updateSlot(self)
+		}
+	}
+}
+
 // NewOptionalSchema creates an OptionalSchema wrapping inner.
 func NewOptionalSchema[T any](inner Schema[T]) OptionalSchema[T] {
 	node := &optionalNode[T]{inner: inner.node(), schema: inner}
-	return OptionalSchema[T]{
+	res := OptionalSchema[T]{
 		BaseSchema: NewBaseSchema[Option[T]](node),
 		inner:      inner,
 	}
+	inheritSlot(&res.BaseSchema, inner, res)
+	return res
 }
 
 // Unwrap returns the underlying schema.
@@ -81,10 +93,12 @@ func (n *nullableNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 // NewNullableSchema creates a NullableSchema wrapping inner.
 func NewNullableSchema[T any](inner Schema[T]) NullableSchema[T] {
 	node := &nullableNode[T]{inner: inner.node(), schema: inner}
-	return NullableSchema[T]{
+	res := NullableSchema[T]{
 		BaseSchema: NewBaseSchema[Nullable[T]](node),
 		inner:      inner,
 	}
+	inheritSlot(&res.BaseSchema, inner, res)
+	return res
 }
 
 // Unwrap returns the underlying schema.
@@ -124,10 +138,12 @@ func (n *nullishNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 // NewNullishSchema creates a NullishSchema wrapping inner.
 func NewNullishSchema[T any](inner Schema[T]) NullishSchema[T] {
 	node := &nullishNode[T]{inner: inner.node(), schema: inner}
-	return NullishSchema[T]{
+	res := NullishSchema[T]{
 		BaseSchema: NewBaseSchema[Option[Nullable[T]]](node),
 		inner:      inner,
 	}
+	inheritSlot(&res.BaseSchema, inner, res)
+	return res
 }
 
 // Unwrap returns the underlying schema.
@@ -167,11 +183,13 @@ func NewDefaultSchema[T any](inner Schema[T], defaultValue T) DefaultSchema[T] {
 // NewDefaultFuncSchema creates a DefaultSchema wrapping inner with a dynamic fallback supplier.
 func NewDefaultFuncSchema[T any](inner Schema[T], fn func() T) DefaultSchema[T] {
 	node := &defaultNode[T]{inner: inner.node(), schema: inner, defaultFn: fn}
-	return DefaultSchema[T]{
+	res := DefaultSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,
 		defaultFn:  fn,
 	}
+	inheritSlot(&res.BaseSchema, inner, res)
+	return res
 }
 
 // Unwrap returns the underlying schema.
@@ -210,11 +228,13 @@ func NewPrefaultSchema[T any](inner Schema[T], prefaultValue T) PrefaultSchema[T
 // NewPrefaultFuncSchema creates a PrefaultSchema wrapping inner with a dynamic supplier.
 func NewPrefaultFuncSchema[T any](inner Schema[T], fn func() T) PrefaultSchema[T] {
 	node := &prefaultNode[T]{inner: inner.node(), schema: inner, prefaultFn: fn}
-	return PrefaultSchema[T]{
+	res := PrefaultSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,
 		prefaultFn: fn,
 	}
+	inheritSlot(&res.BaseSchema, inner, res)
+	return res
 }
 
 // Unwrap returns the underlying schema.
@@ -263,11 +283,13 @@ func NewCatchSchema[T any](inner Schema[T], fallback T) CatchSchema[T] {
 // NewCatchFuncSchema creates a CatchSchema with dynamic issue-aware fallback.
 func NewCatchFuncSchema[T any](inner Schema[T], fn func(issues []Issue) T) CatchSchema[T] {
 	node := &catchNode[T]{inner: inner.node(), schema: inner, catchFn: fn}
-	return CatchSchema[T]{
+	res := CatchSchema[T]{
 		BaseSchema: NewBaseSchema[T](node),
 		inner:      inner,
 		catchFn:    fn,
 	}
+	inheritSlot(&res.BaseSchema, inner, res)
+	return res
 }
 
 // Unwrap returns the underlying schema.

@@ -28,20 +28,191 @@ type fieldEntry struct {
 }
 
 // @spec REQ-OBJ-001
-// Shape is the builder used by z.Object to define fields with string keys.
-type Shape struct {
-	fields []fieldEntry
+// ObjectBuilder is the builder used by z.Object to define fields with string keys.
+type ObjectBuilder struct {
+	fields []*fieldEntry
 }
 
 // @spec REQ-OBJ-001
-// Field registers a named field with its schema. Panics on duplicate names.
-func (s *Shape) Field(name string, sch AnySchema) {
+// Field registers a named field. Panics on duplicate names.
+// When called with 1 argument, returns an *ObjectFieldBuilder with type aliases (.String(), .Int(), etc.).
+// When called with 2 arguments (backwards compatibility), registers the schema directly.
+func (s *ObjectBuilder) Field(name string, sch ...AnySchema) *ObjectFieldBuilder {
 	for _, f := range s.fields {
 		if f.name == name {
 			panic(fmt.Sprintf("duplicate field %q registered in z.Object", name))
 		}
 	}
-	s.fields = append(s.fields, fieldEntry{name: name, schema: sch})
+	entry := &fieldEntry{name: name}
+	s.fields = append(s.fields, entry)
+	b := &ObjectFieldBuilder{
+		builder: s,
+		entry:   entry,
+	}
+	if len(sch) > 0 && sch[0] != nil {
+		b.Schema(sch[0])
+	}
+	return b
+}
+
+// ObjectFieldBuilder provides fluent methods to declare schemas on an object field.
+type ObjectFieldBuilder struct {
+	builder *ObjectBuilder
+	entry   *fieldEntry
+}
+
+func (b *ObjectFieldBuilder) bind(sch AnySchema) {
+	b.entry.schema = sch
+	if s, ok := any(sch).(interface{ setSlot(*AnySchema) }); ok {
+		s.setSlot(&b.entry.schema)
+	}
+}
+
+func (b *ObjectFieldBuilder) Schema(sch AnySchema) AnySchema {
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) String() *StringSchema {
+	sch := String()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Int() *NumberSchema[int] {
+	sch := Int()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Int8() *NumberSchema[int8] {
+	sch := Int8()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Int16() *NumberSchema[int16] {
+	sch := Int16()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Int32() *NumberSchema[int32] {
+	sch := Int32()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Int64() *NumberSchema[int64] {
+	sch := Int64()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Uint() *NumberSchema[uint] {
+	sch := Uint()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Uint8() *NumberSchema[uint8] {
+	sch := Uint8()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Uint16() *NumberSchema[uint16] {
+	sch := Uint16()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Uint32() *NumberSchema[uint32] {
+	sch := Uint32()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Uint64() *NumberSchema[uint64] {
+	sch := Uint64()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Float32() *NumberSchema[float32] {
+	sch := Float32()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Float64() *NumberSchema[float64] {
+	sch := Float64()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) BigInt() *BigIntSchema {
+	sch := BigInt()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Boolean() *BooleanSchema {
+	sch := Boolean()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Bool() *BooleanSchema {
+	return b.Boolean()
+}
+
+func (b *ObjectFieldBuilder) Date() *DateSchema {
+	sch := Date()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Bytes() *BytesSchema {
+	sch := Bytes()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Email() *StringSchema {
+	sch := Email()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) UUID() *StringSchema {
+	sch := UUID()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) URL() *StringSchema {
+	sch := URL()
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Enum(values ...string) *EnumSchema[string] {
+	sch := Enum(values...)
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Literal(val any) AnySchema {
+	sch := Literal(val)
+	b.bind(sch)
+	return sch
+}
+
+func (b *ObjectFieldBuilder) Any() *AnyPrimitiveSchema {
+	sch := Any()
+	b.bind(sch)
+	return sch
 }
 
 // @spec REQ-OBJ-001
@@ -196,12 +367,20 @@ unknownKeys:
 
 // @spec REQ-OBJ-001
 // Object creates an object schema with strip mode by default.
-func Object(build func(s *Shape)) *ObjectSchema {
-	s := &Shape{}
+func Object(build func(s *ObjectBuilder)) *ObjectSchema {
+	s := &ObjectBuilder{}
 	build(s)
 
+	fields := make([]fieldEntry, 0, len(s.fields))
+	for _, f := range s.fields {
+		if f.schema == nil {
+			panic(fmt.Sprintf("z.Object: field %q registered without schema", f.name))
+		}
+		fields = append(fields, *f)
+	}
+
 	obj := &ObjectSchema{
-		fields: s.fields,
+		fields: fields,
 		mode:   unknownKeysStrip,
 	}
 	obj.BaseSchema = NewBaseSchema[Dyn](&objectNode{schema: obj})
@@ -210,13 +389,13 @@ func Object(build func(s *Shape)) *ObjectSchema {
 
 // @spec REQ-OBJ-001
 // StrictObject creates an object schema in strict mode (rejects unknown keys).
-func StrictObject(build func(s *Shape)) *ObjectSchema {
+func StrictObject(build func(s *ObjectBuilder)) *ObjectSchema {
 	return Object(build).Strict()
 }
 
 // @spec REQ-OBJ-001
 // LooseObject creates an object schema in loose mode (preserves unknown keys).
-func LooseObject(build func(s *Shape)) *ObjectSchema {
+func LooseObject(build func(s *ObjectBuilder)) *ObjectSchema {
 	return Object(build).Loose()
 }
 
@@ -227,7 +406,9 @@ func (s *ObjectSchema) clone() *ObjectSchema {
 		catchallSch: s.catchallSch,
 	}
 	c.BaseSchema = NewBaseSchema[Dyn](&objectNode{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 
@@ -266,25 +447,30 @@ func (s *ObjectSchema) Catchall(catchallSchema AnySchema) *ObjectSchema {
 
 // @spec REQ-OBJ-002
 // Extend merges new fields into the object schema, inheriting unknown key mode.
-func (s *ObjectSchema) Extend(build func(shape *Shape)) *ObjectSchema {
+func (s *ObjectSchema) Extend(build func(shape *ObjectBuilder)) *ObjectSchema {
 	c := s.clone()
-	sub := &Shape{}
+	sub := &ObjectBuilder{}
 	build(sub)
 
 	// Replace existing or append
 	for _, newF := range sub.fields {
+		if newF.schema == nil {
+			panic(fmt.Sprintf("z.Object: field %q registered without schema in Extend", newF.name))
+		}
 		found := false
 		for i, oldF := range c.fields {
 			if oldF.name == newF.name {
-				c.fields[i] = newF
+				c.fields[i] = *newF
 				found = true
 				break
 			}
 		}
 		if !found {
-			c.fields = append(c.fields, newF)
+			c.fields = append(c.fields, *newF)
 		}
 	}
+	c.BaseSchema = NewBaseSchema[Dyn](&objectNode{schema: c})
+	c.setMeta(s.getMeta())
 	return c
 }
 

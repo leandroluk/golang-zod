@@ -9,9 +9,9 @@
 `z.Object` builds schemas using string keys:
 
 ```go
-schema := z.Object(func(s *z.Shape) {
-	s.Field("username", z.String().Min(3))
-	s.Field("score", z.Int().Default(0))
+schema := z.Object(func(s *z.ObjectBuilder) {
+	s.Field("username").String().Min(3)
+	s.Field("score").Int().Default(0)
 })
 ```
 
@@ -32,8 +32,8 @@ catchallSch  := schema.Catchall(z.String())
 
 ```go
 // Extend with additional fields
-extended := schema.Extend(func(s *z.Shape) {
-	s.Field("role", z.String())
+extended := schema.Extend(func(s *z.ObjectBuilder) {
+	s.Field("role").String()
 })
 
 // Pick / Omit fields
@@ -62,11 +62,11 @@ type UserAccount struct {
 	IsPremium bool   `json:"is_premium"`
 }
 
-var userAccountSchema = z.Struct[UserAccount](func(s *z.StructShape, u *UserAccount) {
-	s.Field(&u.ID, z.Int())
-	s.Field(&u.Email, z.Email())
-	s.Field(&u.Nickname, z.String().Default("guest"))
-	s.Field(&u.IsPremium, z.Boolean())
+var userAccountSchema = z.Struct[UserAccount](func(s *z.StructBuilder, u *UserAccount) {
+	s.Field(&u.ID).Int()
+	s.Field(&u.Email).Email()
+	s.Field(&u.Nickname).String().Default("guest")
+	s.Field(&u.IsPremium).Boolean()
 })
 ```
 

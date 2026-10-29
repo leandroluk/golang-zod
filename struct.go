@@ -8,17 +8,26 @@ import (
 	"strings"
 )
 
-// @spec REQ-OBJ-004
-// StructShape is the builder passed to z.Struct to bind struct field pointers to schemas.
-type StructShape struct {
-	basePtr uintptr
-	tType   reflect.Type
-	fields  []structFieldBinding
+type structSlot struct {
+	fieldName   string
+	jsonName    string
+	schema      AnySchema
+	makeBinding func(sch AnySchema) structFieldBinding
 }
 
 // @spec REQ-OBJ-004
-// Field binds a struct field pointer to a Schema with matching output type.
-func (s *StructShape) Field[F any](p *F, sch Schema[F]) {
+// StructBuilder is the builder passed to z.Struct to bind struct field pointers to schemas.
+type StructBuilder struct {
+	basePtr uintptr
+	tType   reflect.Type
+	slots   []*structSlot
+}
+
+// @spec REQ-OBJ-004
+// Field binds a struct field pointer. Panics on invalid pointers, duplicate JSON names, or unexported fields.
+// When called with 1 argument, returns an *StructFieldBuilder with type aliases (.String(), .Int(), etc.).
+// When called with 2 arguments (backwards compatibility), registers the schema directly.
+func (s *StructBuilder) Field[F any](p *F, sch ...Schema[F]) *StructFieldBuilder {
 	if p == nil {
 		panic("z.Struct: field pointer cannot be nil")
 	}
@@ -65,14 +74,189 @@ func (s *StructShape) Field[F any](p *F, sch Schema[F]) {
 		panic(fmt.Sprintf("z.Struct: field %q must specify a valid json name in `json:\"name\"`", matchedField.Name))
 	}
 
-	for _, existing := range s.fields {
+	for _, existing := range s.slots {
 		if existing.jsonName == jsonName {
 			panic(fmt.Sprintf("z.Struct: duplicate json field name %q", jsonName))
 		}
 	}
 
-	binding := makeFieldBinding[F](jsonName, off, sch)
-	s.fields = append(s.fields, binding)
+	slot := &structSlot{
+		fieldName:   matchedField.Name,
+		jsonName:    jsonName,
+		makeBinding: func(sch AnySchema) structFieldBinding {
+			return makeFieldBinding[F](jsonName, off, sch)
+		},
+	}
+	s.slots = append(s.slots, slot)
+
+	b := &StructFieldBuilder{
+		shape: s,
+		slot:  slot,
+	}
+	if len(sch) > 0 && sch[0] != nil {
+		b.Schema(sch[0])
+	}
+	return b
+}
+
+// StructFieldBuilder provides fluent methods to declare schemas on a struct field.
+type StructFieldBuilder struct {
+	shape *StructBuilder
+	slot  *structSlot
+}
+
+func (b *StructFieldBuilder) bind(sch AnySchema) {
+	b.slot.schema = sch
+	if s, ok := any(sch).(interface{ setSlot(*AnySchema) }); ok {
+		s.setSlot(&b.slot.schema)
+	}
+}
+
+func (b *StructFieldBuilder) Schema(sch AnySchema) AnySchema {
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) String() *StringSchema {
+	sch := String()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Int() *NumberSchema[int] {
+	sch := Int()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Int8() *NumberSchema[int8] {
+	sch := Int8()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Int16() *NumberSchema[int16] {
+	sch := Int16()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Int32() *NumberSchema[int32] {
+	sch := Int32()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Int64() *NumberSchema[int64] {
+	sch := Int64()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Uint() *NumberSchema[uint] {
+	sch := Uint()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Uint8() *NumberSchema[uint8] {
+	sch := Uint8()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Uint16() *NumberSchema[uint16] {
+	sch := Uint16()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Uint32() *NumberSchema[uint32] {
+	sch := Uint32()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Uint64() *NumberSchema[uint64] {
+	sch := Uint64()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Float32() *NumberSchema[float32] {
+	sch := Float32()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Float64() *NumberSchema[float64] {
+	sch := Float64()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) BigInt() *BigIntSchema {
+	sch := BigInt()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Boolean() *BooleanSchema {
+	sch := Boolean()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Bool() *BooleanSchema {
+	return b.Boolean()
+}
+
+func (b *StructFieldBuilder) Date() *DateSchema {
+	sch := Date()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Bytes() *BytesSchema {
+	sch := Bytes()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Email() *StringSchema {
+	sch := Email()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) UUID() *StringSchema {
+	sch := UUID()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) URL() *StringSchema {
+	sch := URL()
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Enum(values ...string) *EnumSchema[string] {
+	sch := Enum(values...)
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Literal(val any) AnySchema {
+	sch := Literal(val)
+	b.bind(sch)
+	return sch
+}
+
+func (b *StructFieldBuilder) Any() *AnyPrimitiveSchema {
+	sch := Any()
+	b.bind(sch)
+	return sch
 }
 
 // @spec REQ-OBJ-004
@@ -206,7 +390,7 @@ func (n *structNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 
 // @spec REQ-OBJ-004
 // Struct constructs a schema targeting a concrete Go struct type T.
-func Struct[T any](build func(s *StructShape, t *T)) *StructSchema[T] {
+func Struct[T any](build func(s *StructBuilder, t *T)) *StructSchema[T] {
 	tType := reflect.TypeOf((*T)(nil)).Elem()
 	if tType.Kind() != reflect.Struct {
 		panic(fmt.Sprintf("z.Struct[T]: T must be a struct, got %s", tType.Kind()))
@@ -216,15 +400,23 @@ func Struct[T any](build func(s *StructShape, t *T)) *StructSchema[T] {
 	sampleVal := reflect.ValueOf(&sample)
 	basePtr := sampleVal.Pointer()
 
-	shape := &StructShape{
+	shape := &StructBuilder{
 		basePtr: basePtr,
 		tType:   tType,
 	}
 
 	build(shape, &sample)
 
+	fields := make([]structFieldBinding, 0, len(shape.slots))
+	for _, slot := range shape.slots {
+		if slot.schema == nil {
+			panic(fmt.Sprintf("z.Struct: field %q registered without schema", slot.fieldName))
+		}
+		fields = append(fields, slot.makeBinding(slot.schema))
+	}
+
 	s := &StructSchema[T]{
-		fields:   shape.fields,
+		fields:   fields,
 		isStrict: false,
 	}
 	s.BaseSchema = NewBaseSchema[T](&structNode[T]{schema: s})
@@ -237,7 +429,9 @@ func (s *StructSchema[T]) clone() *StructSchema[T] {
 		isStrict: s.isStrict,
 	}
 	c.BaseSchema = NewBaseSchema[T](&structNode[T]{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 

@@ -211,7 +211,7 @@ func TestCoverEDeepPathSpill(t *testing.T) {
 	var sch z.AnySchema = z.String()
 	for i := 0; i < depth; i++ {
 		inner := sch
-		sch = z.Object(func(s *z.Shape) { s.Field(fmt.Sprintf("f%d", i), inner) })
+		sch = z.Object(func(s *z.ObjectBuilder) { s.Field(fmt.Sprintf("f%d", i), inner) })
 	}
 	// Matching input: outermost key is f{depth-1}.
 	in := any(5)

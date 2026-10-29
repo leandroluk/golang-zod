@@ -328,7 +328,9 @@ func (s *NumberSchema[T]) clone() *NumberSchema[T] {
 		checks: slices.Clone(s.checks),
 	}
 	c.BaseSchema = NewBaseSchema[T](&numberNode[T]{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 

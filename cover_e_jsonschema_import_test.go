@@ -95,7 +95,7 @@ func TestCoverEJSONSchemaRoundTrip(t *testing.T) {
 		{"array", z.Array(z.String()), []any{[]any{"a"}}, []any{[]any{1.0}, "a"}},
 		{"union", z.Union(z.String(), z.Boolean()), []any{"a", true}, []any{1.0}},
 		{"nullable", z.String().Nullable(), []any{"a"}, []any{1.0}},
-		{"object", z.StrictObject(func(s *z.Shape) {
+		{"object", z.StrictObject(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 			s.Field("role", z.Enum("ADMIN", "USER"))
 			s.Field("tags", z.Array(z.String()).Optional())
@@ -103,8 +103,8 @@ func TestCoverEJSONSchemaRoundTrip(t *testing.T) {
 			[]any{map[string]any{"name": "a", "role": "ADMIN"}, map[string]any{"name": "a", "role": "USER", "tags": []any{"x"}}},
 			[]any{map[string]any{"name": "a"}, map[string]any{"name": "a", "role": "ROOT"}, map[string]any{"name": "a", "role": "USER", "x": 1.0}}},
 		{"intersection", z.Intersection(
-			z.LooseObject(func(s *z.Shape) { s.Field("a", z.String()) }),
-			z.LooseObject(func(s *z.Shape) { s.Field("b", z.Float64()) })),
+			z.LooseObject(func(s *z.ObjectBuilder) { s.Field("a", z.String()) }),
+			z.LooseObject(func(s *z.ObjectBuilder) { s.Field("b", z.Float64()) })),
 			[]any{map[string]any{"a": "x", "b": 1.0}}, []any{map[string]any{"a": "x"}}},
 	}
 	for _, f := range fixtures {

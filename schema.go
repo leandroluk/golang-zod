@@ -33,6 +33,7 @@ func extractContext(ctxs []context.Context) context.Context {
 type BaseSchema[T any] struct {
 	innerNode node
 	meta      Meta
+	slot      *AnySchema
 }
 
 // NewBaseSchema creates a new BaseSchema wrapping an untyped engine node.
@@ -49,14 +50,31 @@ func (s BaseSchema[T]) node() node {
 	return s.innerNode
 }
 
+func (s BaseSchema[T]) getMeta() Meta {
+	return s.meta
+}
+
 // @spec REQ-CORE-002
 // GetMeta returns the schema's metadata.
 func (s BaseSchema[T]) GetMeta() Meta {
 	return s.meta
 }
 
-// SetMeta updates the schema metadata, validating non-empty ID uniqueness.
-func (s *BaseSchema[T]) SetMeta(m Meta) {
+func (s *BaseSchema[T]) setSlot(slot *AnySchema) {
+	s.slot = slot
+}
+
+func (s BaseSchema[T]) getSlot() *AnySchema {
+	return s.slot
+}
+
+func (s BaseSchema[T]) updateSlot(newSch AnySchema) {
+	if s.slot != nil {
+		*s.slot = newSch
+	}
+}
+
+func (s *BaseSchema[T]) setMeta(m Meta) {
 	if m.ID != "" {
 		if m.lineage == nil {
 			m.lineage = &metaLineage{}
@@ -64,6 +82,11 @@ func (s *BaseSchema[T]) SetMeta(m Meta) {
 		RegisterSchemaID(m.ID, m.lineage)
 	}
 	s.meta = m
+}
+
+// SetMeta updates the schema metadata, validating non-empty ID uniqueness.
+func (s *BaseSchema[T]) SetMeta(m Meta) {
+	s.setMeta(m)
 }
 
 // @spec REQ-CORE-002

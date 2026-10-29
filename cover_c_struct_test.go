@@ -28,7 +28,7 @@ type CoverCNested struct {
 }
 
 func coverCUserSchema() *z.StructSchema[CoverCUser] {
-	return z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) {
+	return z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) {
 		s.Field(&u.ID, z.Int())
 		s.Field(&u.Name, z.String())
 		s.Field(&u.Nick, z.String().Optional())
@@ -46,44 +46,44 @@ func TestCoverCStructConstructionPanics(t *testing.T) {
 		build func()
 	}{
 		{"non struct", "T must be a struct", func() {
-			z.Struct[int](func(s *z.StructShape, v *int) {})
+			z.Struct[int](func(s *z.StructBuilder, v *int) {})
 		}},
 		{"nil pointer", "field pointer cannot be nil", func() {
-			z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) { s.Field[int](nil, z.Int()) })
+			z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) { s.Field[int](nil, z.Int()) })
 		}},
 		{"pointer outside struct", "does not point to a field of struct T", func() {
-			z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) { s.Field(&outside, z.Int()) })
+			z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) { s.Field(&outside, z.Int()) })
 		}},
 		{"nested field path", "embedded or nested field paths", func() {
-			z.Struct[CoverCNested](func(s *z.StructShape, u *CoverCNested) { s.Field(&u.Inner.B, z.Int()) })
+			z.Struct[CoverCNested](func(s *z.StructBuilder, u *CoverCNested) { s.Field(&u.Inner.B, z.Int()) })
 		}},
 		{"nested field at same offset as parent has mismatched type", "does not match schema type", func() {
-			z.Struct[CoverCNested](func(s *z.StructShape, u *CoverCNested) { s.Field(&u.Inner.A, z.Int()) })
+			z.Struct[CoverCNested](func(s *z.StructBuilder, u *CoverCNested) { s.Field(&u.Inner.A, z.Int()) })
 		}},
 		{"unexported field", "must be exported", func() {
-			z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) { s.Field(&u.secret, z.String()) })
+			z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) { s.Field(&u.secret, z.String()) })
 		}},
 		{"missing json tag", "mandatory `json:\"name\"` tag", func() {
-			z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) { s.Field(&u.NoTag, z.String()) })
+			z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) { s.Field(&u.NoTag, z.String()) })
 		}},
 		{"json dash", "mandatory `json:\"name\"` tag", func() {
-			z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) { s.Field(&u.Hidden, z.String()) })
+			z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) { s.Field(&u.Hidden, z.String()) })
 		}},
 		{"empty json name", "must specify a valid json name", func() {
 			type T struct {
 				V string `json:",omitempty"`
 			}
-			z.Struct[T](func(s *z.StructShape, u *T) { s.Field(&u.V, z.String()) })
+			z.Struct[T](func(s *z.StructBuilder, u *T) { s.Field(&u.V, z.String()) })
 		}},
 		{"dash json name with options", "must specify a valid json name", func() {
 			type T struct {
 				//lint:ignore SA5008 intentionally malformed tag: the constructor must panic on it
 				V string `json:"-,"`
 			}
-			z.Struct[T](func(s *z.StructShape, u *T) { s.Field(&u.V, z.String()) })
+			z.Struct[T](func(s *z.StructBuilder, u *T) { s.Field(&u.V, z.String()) })
 		}},
 		{"duplicate registration", `duplicate json field name "id"`, func() {
-			z.Struct[CoverCUser](func(s *z.StructShape, u *CoverCUser) {
+			z.Struct[CoverCUser](func(s *z.StructBuilder, u *CoverCUser) {
 				s.Field(&u.ID, z.Int())
 				s.Field(&u.ID, z.Int())
 			})
@@ -183,7 +183,7 @@ func TestCoverCStructAbortEarlyAndCancel(t *testing.T) {
 			A string `json:"a"`
 			B string `json:"b"`
 		}
-		s := z.Struct[T](func(s *z.StructShape, v *T) {
+		s := z.Struct[T](func(s *z.StructBuilder, v *T) {
 			s.Field(&v.A, canceller)
 			s.Field(&v.B, z.String())
 		})
@@ -334,8 +334,8 @@ func TestCoverCStructModifiersAndNesting(t *testing.T) {
 	type Outer struct {
 		In Inner `json:"in"`
 	}
-	inner := z.Struct[Inner](func(s *z.StructShape, i *Inner) { s.Field(&i.V, z.Int()) })
-	outer := z.Struct[Outer](func(s *z.StructShape, o *Outer) { s.Field(&o.In, inner) })
+	inner := z.Struct[Inner](func(s *z.StructBuilder, i *Inner) { s.Field(&i.V, z.Int()) })
+	outer := z.Struct[Outer](func(s *z.StructBuilder, o *Outer) { s.Field(&o.In, inner) })
 	o, err := outer.Parse(map[string]any{"in": map[string]any{"v": 4}})
 	if err != nil || o.In.V != 4 {
 		t.Fatalf("%+v %v", o, err)

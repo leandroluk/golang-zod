@@ -12,7 +12,7 @@
 - **Feature 03 (`03-enums-collections`)**: `z.Enum(...)` (+ `Values/Extract/Exclude`), `Array` (constructor and `.Array()` modifier), `Tuple`, `Set`, `Map`.
 
 ## Milestone 4: Objects, Records, Combinators (`M4-objects-combinators`)
-- **Feature 04 (`04-objects-records`)**: `z.Object(func(s *z.Shape))` (string keys, `map[string]any`), `z.Struct[T](func(s *z.StructShape, t *T))` (`&t.Foo` keys, typed `T`), `z.StrictObject`, `z.LooseObject` (struct keys use the mandatory `json` tag; no `ParseInto`), unknown-key modes, shape ops, `Record`.
+- **Feature 04 (`04-objects-records`)**: `z.Object(func(s *z.ObjectBuilder))` (string keys, `map[string]any`), `z.Struct[T](func(s *z.StructBuilder, t *T))` (`&t.Foo` keys, typed `T`), `z.StrictObject`, `z.LooseObject` (struct keys use the mandatory `json` tag; no `ParseInto`), unknown-key modes, shape ops, `Record`.
 - **Feature 05 (`05-unions-intersections-lazy`)**: `Union`, `DiscriminatedUnion`, `XOR`, `Intersection`, `Lazy`.
 
 ## Milestone 5: Modifiers, Refinements, Codecs, Pipelines (`M5-modifiers-pipelines`)

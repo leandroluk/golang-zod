@@ -36,14 +36,14 @@ func TestREQ_PIPE_001_Modifiers(t *testing.T) {
 
 	t.Run("REQ-PIPE-001: Prefault validates fallback value through inner schema", func(t *testing.T) {
 		// Min length 5, prefault "short" should fail inner validation
-		failingPrefault := z.NewPrefaultSchema[string](z.String().Min(5), "abc")
+		failingPrefault := z.NewPrefaultSchema(z.String().Min(5), "abc")
 		_, err := failingPrefault.Parse(nil)
 		if err == nil {
 			t.Fatal("expected prefault 'abc' to fail min length 5")
 		}
 
 		// Valid prefault
-		validPrefault := z.NewPrefaultSchema[string](z.String().Min(5), "valid-string")
+		validPrefault := z.NewPrefaultSchema(z.String().Min(5), "valid-string")
 		v, err := validPrefault.Parse(nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -54,7 +54,7 @@ func TestREQ_PIPE_001_Modifiers(t *testing.T) {
 	})
 
 	t.Run("REQ-PIPE-001: Catch recovers on any validation failure", func(t *testing.T) {
-		s := z.NewCatchSchema[int](z.Int().GTE(10), 999)
+		s := z.NewCatchSchema(z.Int().GTE(10), 999)
 
 		v, err := s.Parse(5) // Fails GTE(10)
 		if err != nil {
@@ -74,7 +74,7 @@ func TestREQ_PIPE_001_Modifiers(t *testing.T) {
 	})
 
 	t.Run("REQ-PIPE-001: Readonly marks schema metadata", func(t *testing.T) {
-		s := z.NewReadonlySchema[string](z.String())
+		s := z.NewReadonlySchema(z.String())
 		if !s.GetMeta().ReadOnly {
 			t.Fatal("expected ReadOnly to be true")
 		}
@@ -85,7 +85,7 @@ func TestREQ_PIPE_001_Modifiers(t *testing.T) {
 func TestREQ_PIPE_003_Refinements(t *testing.T) {
 	t.Run("REQ-PIPE-003: Check, Refine, SuperRefine, RefineCtx", func(t *testing.T) {
 		// Refine
-		isEven := z.Refine[int](z.Int(), func(v int) bool {
+		isEven := z.Refine(z.Int(), func(v int) bool {
 			return v%2 == 0
 		}, z.RefineMessage("number must be even"))
 
@@ -103,7 +103,7 @@ func TestREQ_PIPE_003_Refinements(t *testing.T) {
 		}
 
 		// SuperRefine
-		super := z.SuperRefine[string](z.String(), func(v string, c *z.RefineCtx) {
+		super := z.SuperRefine(z.String(), func(v string, c *z.RefineCtx) {
 			if !strings.HasPrefix(v, "prefix_") {
 				c.AddIssue(z.Issue{
 					Code:    z.Custom,
@@ -121,7 +121,7 @@ func TestREQ_PIPE_003_Refinements(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
 
-		refineCtx := z.RefineWithCtx[int](z.Int(), func(c context.Context, v int) bool {
+		refineCtx := z.RefineWithCtx(z.Int(), func(c context.Context, v int) bool {
 			return true
 		})
 
@@ -136,7 +136,7 @@ func TestREQ_PIPE_003_Refinements(t *testing.T) {
 func TestREQ_PIPE_004_Pipelines(t *testing.T) {
 	t.Run("REQ-PIPE-004: Transform, Preprocess, Pipe", func(t *testing.T) {
 		// Transform
-		toUpper := z.Transform[string, string](z.String(), func(s string) (string, error) {
+		toUpper := z.Transform(z.String(), func(s string) (string, error) {
 			return strings.ToUpper(s), nil
 		})
 
@@ -149,7 +149,7 @@ func TestREQ_PIPE_004_Pipelines(t *testing.T) {
 		}
 
 		// Pipe
-		pipe := z.Pipe[string, int](z.String(), z.Codecs.StringInt())
+		pipe := z.Pipe(z.String(), z.Codecs.StringInt())
 		intRes, err := pipe.Parse("12345")
 		if err != nil {
 			t.Fatalf("unexpected error on pipe: %v", err)
@@ -159,7 +159,7 @@ func TestREQ_PIPE_004_Pipelines(t *testing.T) {
 		}
 
 		// Preprocess
-		prep := z.Preprocess[int](func(raw any) any {
+		prep := z.Preprocess(func(raw any) any {
 			if s, ok := raw.(string); ok {
 				return len(s)
 			}
@@ -260,7 +260,7 @@ func TestREQ_PIPE_005_006_008_Codecs(t *testing.T) {
 	})
 
 	t.Run("REQ-PIPE-005: Encode unsupported error", func(t *testing.T) {
-		oneWay := z.Codec[string, string](z.String(), z.String(), func(s string) (string, error) {
+		oneWay := z.Codec(z.String(), z.String(), func(s string) (string, error) {
 			return s, nil
 		}, nil)
 

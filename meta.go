@@ -97,6 +97,12 @@ func (b *MetaBuilder) Describe(desc string) *MetaBuilder {
 	return b
 }
 
+// Description sets the description of the schema.
+func (b *MetaBuilder) Description(desc string) *MetaBuilder {
+	b.meta.Description = desc
+	return b
+}
+
 // @spec REQ-CORE-010
 // Examples appends example values to the schema metadata.
 func (b *MetaBuilder) Examples(examples ...any) *MetaBuilder {
@@ -138,4 +144,18 @@ func (b *MetaBuilder) Reset() *MetaBuilder {
 // Build returns the compiled immutable Meta struct.
 func (b *MetaBuilder) Build() Meta {
 	return b.meta
+}
+
+// GetMeta extracts metadata from any Schema or schema object.
+func GetMeta(s any) Meta {
+	if s == nil {
+		return Meta{}
+	}
+	if g, ok := s.(interface{ getMeta() Meta }); ok {
+		return g.getMeta()
+	}
+	if g, ok := s.(interface{ GetMeta() Meta }); ok {
+		return g.GetMeta()
+	}
+	return Meta{}
 }

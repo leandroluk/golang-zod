@@ -16,7 +16,7 @@ func TestGapYGraphQLIntersectionErrors(t *testing.T) {
 	inter := z.Intersection(coverEStrObj("a"), coverEStrObj("b"))
 	for name, sch := range map[string]z.AnySchema{
 		"root":  inter,
-		"field": z.Object(func(s *z.Shape) { s.Field("i", inter) }),
+		"field": z.Object(func(s *z.ObjectBuilder) { s.Field("i", inter) }),
 	} {
 		got, err := z.ToGraphQLSDL(sch)
 		if err == nil || err.Error() != "golang-zod: Intersection has no GraphQL equivalent" || got != "" {
@@ -39,7 +39,7 @@ func TestGapYGraphQLUnionErrors(t *testing.T) {
 	if err == nil || err.Error() != "golang-zod: Union has no GraphQL input equivalent" {
 		t.Fatalf("input union: %v", err)
 	}
-	bad := z.Object(func(s *z.Shape) { s.Field("t", z.Tuple(z.String())) })
+	bad := z.Object(func(s *z.ObjectBuilder) { s.Field("t", z.Tuple(z.String())) })
 	_, err = z.ToGraphQLSDL(z.Union(bad))
 	if err == nil || err.Error() != "golang-zod: heterogeneous Tuple has no GraphQL equivalent" {
 		t.Fatalf("nested tuple error: %v", err)
@@ -48,10 +48,10 @@ func TestGapYGraphQLUnionErrors(t *testing.T) {
 
 // @spec REQ-GQL-001
 func TestGapYGraphQLUnionSDL(t *testing.T) {
-	cat := gapYID("gapY_Cat", z.Object(func(s *z.Shape) { s.Field("kind", z.Literal("cat")) }))
-	dog := gapYID("gapY_Dog", z.Object(func(s *z.Shape) { s.Field("kind", z.Literal("dog")) }))
+	cat := gapYID("gapY_Cat", z.Object(func(s *z.ObjectBuilder) { s.Field("kind", z.Literal("cat")) }))
+	dog := gapYID("gapY_Dog", z.Object(func(s *z.ObjectBuilder) { s.Field("kind", z.Literal("dog")) }))
 	pet := z.DiscriminatedUnion("kind", cat, dog).Meta(func(m *z.MetaBuilder) { m.ID("gapY_Pet") })
-	root := gapYID("gapY_Owner", z.Object(func(s *z.Shape) {
+	root := gapYID("gapY_Owner", z.Object(func(s *z.ObjectBuilder) {
 		s.Field("pet", pet)
 		s.Field("again", pet)
 	}))
@@ -70,7 +70,7 @@ func TestGapYGraphQLUnionSDL(t *testing.T) {
 
 // @spec REQ-GQL-003
 func TestGapYGraphQLFallbackNaming(t *testing.T) {
-	user := z.Object(func(s *z.Shape) {
+	user := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("address", coverEStrObj("street"))
 		s.Field("home_town", coverEStrObj("zip"))
 		s.Field("tags", z.Array(coverEStrObj("n")))
@@ -92,7 +92,7 @@ func TestGapYGraphQLFallbackNaming(t *testing.T) {
 // @spec REQ-GQL-003
 func TestGapYGraphQLNameCollisions(t *testing.T) {
 	color := z.Enum("R", "G")
-	root := z.Object(func(s *z.Shape) {
+	root := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a_b", coverEStrObj("x"))
 		s.Field("aB", coverEStrObj("y"))
 		s.Field("other", gapYID("gapY_RootAB", coverEStrObj("p")))
@@ -120,7 +120,7 @@ func TestGapYGraphQLNameCollisions(t *testing.T) {
 	}
 
 	// A suffixed candidate that is already taken is skipped.
-	skip := z.Object(func(s *z.Shape) {
+	skip := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", coverEStrObj("x"))
 		s.Field("b", gapYID("QueryA", coverEStrObj("y")))
 		s.Field("c", gapYID("QueryA2", coverEStrObj("z")))
@@ -134,7 +134,7 @@ func TestGapYGraphQLNameCollisions(t *testing.T) {
 
 // @spec REQ-GQL-002
 func TestGapYGraphQLDefaultAndStructFields(t *testing.T) {
-	root := z.Object(func(s *z.Shape) {
+	root := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("d", z.String().Default("x"))
 	})
 	got, err := z.ToGraphQLSDL(root)
@@ -144,7 +144,7 @@ func TestGapYGraphQLDefaultAndStructFields(t *testing.T) {
 	type gapYS struct {
 		N string `json:"n"`
 	}
-	st := z.Struct[gapYS](func(s *z.StructShape, v *gapYS) { s.Field(&v.N, z.String()) })
+	st := z.Struct[gapYS](func(s *z.StructBuilder, v *gapYS) { s.Field(&v.N, z.String()) })
 	got, err = z.ToGraphQLSDL(z.Union(st))
 	if err != nil || got != "union Query = QueryOption1\n\ntype QueryOption1 {\n  n: String!\n}" {
 		t.Fatalf("got %q, %v", got, err)

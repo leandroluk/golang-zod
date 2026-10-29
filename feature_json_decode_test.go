@@ -34,7 +34,7 @@ func TestREQ_OPT_002_003_TokenDecoding(t *testing.T) {
 	})
 
 	t.Run("nested documents and Decode from a reader", func(t *testing.T) {
-		s := z.Object(func(s *z.Shape) {
+		s := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 			s.Field("tags", z.Array(z.String()))
 			s.Field("ok", z.Boolean())

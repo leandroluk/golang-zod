@@ -14,7 +14,7 @@ func TestREQ_GQL_001_002_004_005_GraphQL(t *testing.T) {
 			m.ID("Role")
 		})
 
-		user := z.Object(func(s *z.Shape) {
+		user := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("id", z.String())
 			s.Field("name", z.String())
 			s.Field("role", roleEnum)
@@ -45,7 +45,7 @@ func TestREQ_GQL_001_002_004_005_GraphQL(t *testing.T) {
 	})
 
 	t.Run("REQ-GQL-001: GraphQLInput generates input object", func(t *testing.T) {
-		input := z.Object(func(s *z.Shape) {
+		input := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("email", z.String())
 		}).Meta(func(m *z.MetaBuilder) {
 			m.ID("CreateUserInput")
@@ -63,7 +63,7 @@ func TestREQ_GQL_001_002_004_005_GraphQL(t *testing.T) {
 	t.Run("REQ-GQL-004: Recursive schema terminates cleanly", func(t *testing.T) {
 		var nodeSchema z.Schema[z.Dyn]
 		nodeSchema = z.Lazy(func() z.Schema[z.Dyn] {
-			return z.Object(func(s *z.Shape) {
+			return z.Object(func(s *z.ObjectBuilder) {
 				s.Field("name", z.String())
 				s.Field("children", z.Array(nodeSchema).Optional())
 			}).Meta(func(m *z.MetaBuilder) {

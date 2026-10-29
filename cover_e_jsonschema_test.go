@@ -89,11 +89,11 @@ func TestCoverEToJSONSchemaUnrepresentable(t *testing.T) {
 		{"set", z.Set(z.String()), `unrepresentable node kind`},
 		{"transform", z.Transform(z.String(), func(s string) (int, error) { return len(s), nil }), `unrepresentable node kind`},
 		{"array element", z.Array(z.BigInt()), `at "[]"`},
-		{"object field", z.Object(func(s *z.Shape) { s.Field("n", z.BigInt()) }), `at ".n"`},
-		{"catchall", z.Object(func(s *z.Shape) {}).Catchall(z.BigInt()), `at ".*"`},
+		{"object field", z.Object(func(s *z.ObjectBuilder) { s.Field("n", z.BigInt()) }), `at ".n"`},
+		{"catchall", z.Object(func(s *z.ObjectBuilder) {}).Catchall(z.BigInt()), `at ".*"`},
 		{"union option", z.Union(z.String(), z.BigInt()), `at "|1"`},
 		{"discriminated option", z.DiscriminatedUnion("k",
-			z.Object(func(s *z.Shape) { s.Field("k", z.Literal("a")); s.Field("v", z.BigInt()) })), `at "|0.v"`},
+			z.Object(func(s *z.ObjectBuilder) { s.Field("k", z.Literal("a")); s.Field("v", z.BigInt()) })), `at "|0.v"`},
 		{"intersection left", z.Intersection(z.BigInt(), z.String()), `at "&L"`},
 		{"intersection right", z.Intersection(z.String(), z.BigInt()), `at "&R"`},
 		{"nullable", z.BigInt().Nullable(), `unrepresentable node kind`},
@@ -119,7 +119,7 @@ func TestCoverEToJSONSchemaUnrepresentable(t *testing.T) {
 // @spec REQ-EXP-003
 func TestCoverEToJSONSchemaCyclesThrow(t *testing.T) {
 	var node *z.ObjectSchema
-	node = z.Object(func(s *z.Shape) {
+	node = z.Object(func(s *z.ObjectBuilder) {
 		s.Field("next", z.Lazy(func() z.Schema[z.Dyn] { return node }))
 	}).Meta(func(m *z.MetaBuilder) { m.ID("coverE_js_cycle") })
 

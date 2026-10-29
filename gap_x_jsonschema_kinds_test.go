@@ -106,7 +106,7 @@ func TestGapXInt64AndUint64AreUnrepresentable(t *testing.T) {
 		"int64":  z.Int64(),
 		"uint64": z.Uint64(),
 		"bigint": z.BigInt(),
-		"nested": z.Object(func(s *z.Shape) { s.Field("n", z.Int64()) }),
+		"nested": z.Object(func(s *z.ObjectBuilder) { s.Field("n", z.Int64()) }),
 	} {
 		t.Run(name+" throws", func(t *testing.T) {
 			_, err := z.ToJSONSchema(sch)
@@ -118,7 +118,7 @@ func TestGapXInt64AndUint64AreUnrepresentable(t *testing.T) {
 	gapXRun(t, []gapXCase{
 		{"int64 any", z.Int64(), gapXOpts(z.WithUnrepresentable(z.UnrepresentableAny)), `{}`},
 		{"uint64 any", z.Uint64(), gapXOpts(z.WithUnrepresentable(z.UnrepresentableAny)), `{}`},
-		{"nested int64 any", z.Object(func(s *z.Shape) { s.Field("n", z.Int64()) }),
+		{"nested int64 any", z.Object(func(s *z.ObjectBuilder) { s.Field("n", z.Int64()) }),
 			gapXOpts(z.WithUnrepresentable(z.UnrepresentableAny)),
 			gapXD2020 + `"additionalProperties":false,"properties":{"n":{}},"required":["n"],"type":"object"}`},
 	})
@@ -136,7 +136,7 @@ func TestGapXOtherUnrepresentableKinds(t *testing.T) {
 		"pipe into transform": z.Pipe(z.String(), z.Transform(z.String(), func(v string) (int, error) {
 			return len(v), nil
 		})),
-		"default of a date": z.Object(func(s *z.Shape) { s.Field("d", z.Date().Default(time.Time{})) }),
+		"default of a date": z.Object(func(s *z.ObjectBuilder) { s.Field("d", z.Date().Default(time.Time{})) }),
 	}
 	for name, sch := range cases {
 		t.Run(name+" throws", func(t *testing.T) {
@@ -169,7 +169,7 @@ func TestGapXRecordExport(t *testing.T) {
 			`{"additionalProperties":{"type":"string"},"type":"object"}`},
 		{"nested record value", z.Record(z.String(), z.Record(z.String(), z.Boolean())), nil,
 			gapXD2020 + `"additionalProperties":{"additionalProperties":{"type":"boolean"},"type":"object"},"type":"object"}`},
-		{"record in an object", z.Object(func(s *z.Shape) { s.Field("tags", z.Record(z.String(), z.String())) }), nil,
+		{"record in an object", z.Object(func(s *z.ObjectBuilder) { s.Field("tags", z.Record(z.String(), z.String())) }), nil,
 			gapXD2020 + `"additionalProperties":false,"properties":{"tags":{"additionalProperties":{"type":"string"},"type":"object"}},"required":["tags"],"type":"object"}`},
 	})
 	if _, err := z.ToJSONSchema(z.Record(z.String(), z.Date())); err == nil {
@@ -227,12 +227,12 @@ type gapXUser struct {
 }
 
 func gapXUserSchema() *z.StructSchema[gapXUser] {
-	return z.Struct[gapXUser](func(s *z.StructShape, u *gapXUser) {
+	return z.Struct(func(s *z.StructBuilder, u *gapXUser) {
 		s.Field(&u.Name, z.String())
 		s.Field(&u.Age, z.Int().Min(0))
 		s.Field(&u.Bio, z.String().Default("none"))
-		s.Field(&u.Tag, z.NewCatchSchema[string](z.String(), "x"))
-		s.Field(&u.Role, z.NewPrefaultSchema[string](z.String(), "guest"))
+		s.Field(&u.Tag, z.NewCatchSchema(z.String(), "x"))
+		s.Field(&u.Role, z.NewPrefaultSchema(z.String(), "guest"))
 	})
 }
 
@@ -247,7 +247,7 @@ func TestGapXStructExport(t *testing.T) {
 			gapXD2020 + props + `,"required":["age","name"],"type":"object"}`},
 		{"strict input", gapXUserSchema().Strict(), gapXOpts(z.WithIO(z.Input)),
 			gapXD2020 + `"additionalProperties":false,` + props + `,"required":["age","name"],"type":"object"}`},
-		{"empty struct", z.Struct[struct{}](func(s *z.StructShape, u *struct{}) {}), nil,
+		{"empty struct", z.Struct[struct{}](func(s *z.StructBuilder, u *struct{}) {}), nil,
 			gapXD2020 + `"additionalProperties":false,"type":"object"}`},
 	})
 }
@@ -255,12 +255,12 @@ func TestGapXStructExport(t *testing.T) {
 // @spec REQ-EXP-002
 func TestGapXObjectRequiredness(t *testing.T) {
 	obj := func() *z.ObjectSchema {
-		return z.Object(func(s *z.Shape) {
+		return z.Object(func(s *z.ObjectBuilder) {
 			s.Field("plain", z.String())
 			s.Field("opt", z.String().Optional())
 			s.Field("def", z.String().Default("d"))
-			s.Field("catch", z.NewCatchSchema[string](z.String(), "c"))
-			s.Field("pre", z.NewPrefaultSchema[string](z.String(), "p"))
+			s.Field("catch", z.NewCatchSchema(z.String(), "c"))
+			s.Field("pre", z.NewPrefaultSchema(z.String(), "p"))
 		})
 	}
 	props := `"properties":{"catch":{"type":"string"},"def":{"default":"d","type":"string"},"opt":{"type":"string"},` +
@@ -286,16 +286,16 @@ func TestGapXPipeCodecAndWrapperKinds(t *testing.T) {
 			gapXD2020 + `"minimum":1,"type":"integer"}`},
 		{"codec output", z.StringBool(), nil, gapXD2020 + `"type":"boolean"}`},
 		{"codec input", z.StringBool(), in, gapXD2020 + `"type":"string"}`},
-		{"readonly", z.NewReadonlySchema[string](z.String()), nil, gapXD2020 + `"readOnly":true,"type":"string"}`},
-		{"readonly object field", z.Object(func(s *z.Shape) {
-			s.Field("id", z.NewReadonlySchema[int](z.Int()))
+		{"readonly", z.NewReadonlySchema(z.String()), nil, gapXD2020 + `"readOnly":true,"type":"string"}`},
+		{"readonly object field", z.Object(func(s *z.ObjectBuilder) {
+			s.Field("id", z.NewReadonlySchema(z.Int()))
 		}), nil, gapXD2020 + `"additionalProperties":false,"properties":{"id":{"readOnly":true,"type":"integer"}},"required":["id"],"type":"object"}`},
-		{"catch", z.NewCatchSchema[string](z.String(), "x"), nil, gapXD2020 + `"type":"string"}`},
-		{"prefault", z.NewPrefaultSchema[int](z.Int(), 1), nil, gapXD2020 + `"type":"integer"}`},
+		{"catch", z.NewCatchSchema(z.String(), "x"), nil, gapXD2020 + `"type":"string"}`},
+		{"prefault", z.NewPrefaultSchema(z.Int(), 1), nil, gapXD2020 + `"type":"integer"}`},
 		{"optional", z.Int().Optional(), nil, gapXD2020 + `"type":"integer"}`},
-		{"refine exports the refined schema", z.Refine[string](z.String(), func(v string) bool { return v != "" }), nil,
+		{"refine exports the refined schema", z.Refine(z.String(), func(v string) bool { return v != "" }), nil,
 			gapXD2020 + `"type":"string"}`},
-		{"preprocess exports the inner schema", z.Preprocess[int](func(raw any) any { return raw }, z.Int()), nil,
+		{"preprocess exports the inner schema", z.Preprocess(func(raw any) any { return raw }, z.Int()), nil,
 			gapXD2020 + `"type":"integer"}`},
 	})
 }
@@ -309,7 +309,7 @@ func TestGapXDefaultValues(t *testing.T) {
 		{"input mode keeps default", z.String().Default("x"), gapXOpts(z.WithIO(z.Input)),
 			gapXD2020 + `"default":"x","type":"string"}`},
 		{"openapi30", z.String().Default("x"), gapXOpts(z.WithTarget(z.OpenAPI30)), `{"default":"x","type":"string"}`},
-		{"nullable default", z.NewDefaultSchema[z.Nullable[string]](z.String().Nullable(), z.NullableOf("x")), nil,
+		{"nullable default", z.NewDefaultSchema(z.String().Nullable(), z.NullableOf("x")), nil,
 			gapXD2020 + `"default":"x","type":["string","null"]}`},
 		{"unrepresentable value dropped under Any", z.Any().Default(make(chan int)),
 			gapXOpts(z.WithUnrepresentable(z.UnrepresentableAny)), `{}`},
@@ -328,18 +328,18 @@ func TestGapXAnyNeverNull(t *testing.T) {
 		{"null", z.Null(), nil, gapXD2020 + `"type":"null"}`},
 		{"null openapi30", z.Null(), gapXOpts(z.WithTarget(z.OpenAPI30)), `{"enum":[null],"nullable":true,"type":"string"}`},
 		{"null openapi31", z.Null(), gapXOpts(z.WithTarget(z.OpenAPI31)), `{"type":"null"}`},
-		{"never field", z.Object(func(s *z.Shape) { s.Field("n", z.Never()) }), nil,
+		{"never field", z.Object(func(s *z.ObjectBuilder) { s.Field("n", z.Never()) }), nil,
 			gapXD2020 + `"additionalProperties":false,"properties":{"n":{"not":{}}},"required":["n"],"type":"object"}`},
 	})
 }
 
 // @spec REQ-EXP-007
 func TestGapXExportIsDeterministic(t *testing.T) {
-	sch := z.Object(func(s *z.Shape) {
+	sch := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("rec", z.Record(z.Enum("a", "b", "c"), z.Int().Min(1)))
 		s.Field("tup", z.Tuple(z.String(), z.Int()).Rest(z.Boolean()))
 		s.Field("u", gapXUserSchema())
-		s.Field("ro", z.NewReadonlySchema[string](z.String()))
+		s.Field("ro", z.NewReadonlySchema(z.String()))
 		s.Field("d", z.String().Default("x"))
 	})
 	first, err := z.ToJSONSchema(sch, z.WithReused(z.ReusedRef))

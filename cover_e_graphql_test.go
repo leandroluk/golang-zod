@@ -10,7 +10,7 @@ import (
 // @spec REQ-GQL-001 REQ-GQL-002 REQ-GQL-003
 func TestCoverEGraphQLScalarsAndNullability(t *testing.T) {
 	shared := coverEStrObj("x")
-	user := z.Object(func(s *z.Shape) {
+	user := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("s", z.String())
 		s.Field("n", z.Float64())
 		s.Field("b", z.Boolean())
@@ -96,14 +96,14 @@ func TestCoverEGraphQLRootNaming(t *testing.T) {
 
 	// Enum named by Meta.ID wins over the generated hint.
 	role := z.Enum("ADMIN", "USER").Meta(func(m *z.MetaBuilder) { m.ID("CoverERole") })
-	obj := z.Object(func(s *z.Shape) { s.Field("role", role) })
+	obj := z.Object(func(s *z.ObjectBuilder) { s.Field("role", role) })
 	got, err = z.ToGraphQLSDL(obj)
 	if err != nil || got != "enum CoverERole {\n  ADMIN\n  USER\n}\n\ntype Query {\n  role: CoverERole!\n}" {
 		t.Errorf("enum by ID = %q, %v", got, err)
 	}
 	// A nested object named by Meta.ID wins too.
 	inner := coverEStrObj("q").Meta(func(m *z.MetaBuilder) { m.ID("CoverEInner") })
-	got, err = z.ToGraphQLSDL(z.Object(func(s *z.Shape) { s.Field("in", inner) }))
+	got, err = z.ToGraphQLSDL(z.Object(func(s *z.ObjectBuilder) { s.Field("in", inner) }))
 	if err != nil || got != "type CoverEInner {\n  q: String!\n}\n\ntype Query {\n  in: CoverEInner!\n}" {
 		t.Errorf("object by ID = %q, %v", got, err)
 	}
@@ -137,10 +137,10 @@ func TestCoverEGraphQLNonObjectRoots(t *testing.T) {
 // @spec REQ-GQL-004
 func TestCoverEGraphQLRecursion(t *testing.T) {
 	var tree *z.ObjectSchema
-	tree = z.Object(func(s *z.Shape) {
+	tree = z.Object(func(s *z.ObjectBuilder) {
 		s.Field("name", z.String())
 		s.Field("children", z.Array(z.Lazy(func() z.Schema[z.Dyn] { return tree })))
-		s.Field("parent", z.NewOptionalSchema[z.Dyn](z.Lazy(func() z.Schema[z.Dyn] { return tree })))
+		s.Field("parent", z.NewOptionalSchema(z.Lazy(func() z.Schema[z.Dyn] { return tree })))
 	}).Meta(func(m *z.MetaBuilder) { m.ID("CoverETree") })
 
 	got, err := z.ToGraphQLSDL(tree)
@@ -155,7 +155,7 @@ func TestCoverEGraphQLTupleErrors(t *testing.T) {
 	tuple := func() z.AnySchema { return z.Tuple(z.String(), z.Float64()) }
 	cases := map[string]z.AnySchema{
 		"root":     tuple(),
-		"field":    z.Object(func(s *z.Shape) { s.Field("t", tuple()) }),
+		"field":    z.Object(func(s *z.ObjectBuilder) { s.Field("t", tuple()) }),
 		"array":    z.Array(z.Tuple(z.String())),
 		"optional": z.Tuple(z.String()).Optional(),
 	}

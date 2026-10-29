@@ -33,15 +33,15 @@ func TestGapZJSONSchemaRoundTripCorpus(t *testing.T) {
 		gapZFix("array of strings", z.Array(z.String()), []string{`[]`, `["a","b"]`}, []string{`[1]`, `"a"`}),
 		gapZFix("union", z.Union(z.String(), z.Boolean()), []string{`"a"`, `true`}, []string{`1`, `null`}),
 		gapZFix("nullable", z.String().Nullable(), []string{`"a"`, `null`}, []string{`1`}),
-		gapZFix("strict object", z.StrictObject(func(s *z.Shape) {
+		gapZFix("strict object", z.StrictObject(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 			s.Field("role", z.Enum("ADMIN", "USER"))
 			s.Field("tags", z.Array(z.String()).Optional())
 		}),
 			[]string{`{"name":"a","role":"ADMIN"}`, `{"name":"a","role":"USER","tags":["x"]}`},
 			[]string{`{"name":"a"}`, `{"name":"a","role":"ROOT"}`, `{"name":"a","role":"USER","x":1}`, `[]`}),
-		gapZFix("nested objects", z.Object(func(s *z.Shape) {
-			s.Field("user", z.Object(func(u *z.Shape) {
+		gapZFix("nested objects", z.Object(func(s *z.ObjectBuilder) {
+			s.Field("user", z.Object(func(u *z.ObjectBuilder) {
 				u.Field("email", z.Email())
 				u.Field("age", z.Float64().GTE(0))
 			}))
@@ -49,8 +49,8 @@ func TestGapZJSONSchemaRoundTripCorpus(t *testing.T) {
 			[]string{`{"user":{"email":"a@b.co","age":3}}`},
 			[]string{`{"user":{"email":"a@b.co","age":"3"}}`, `{"user":{"age":3}}`, `{}`}),
 		gapZFix("intersection", z.Intersection(
-			z.LooseObject(func(s *z.Shape) { s.Field("a", z.String()) }),
-			z.LooseObject(func(s *z.Shape) { s.Field("b", z.Float64()) })),
+			z.LooseObject(func(s *z.ObjectBuilder) { s.Field("a", z.String()) }),
+			z.LooseObject(func(s *z.ObjectBuilder) { s.Field("b", z.Float64()) })),
 			[]string{`{"a":"x","b":1}`}, []string{`{"a":"x"}`, `{"b":1}`}),
 	}
 	if len(corpus) < 10 {
@@ -139,7 +139,7 @@ func TestGapZHandWrittenDocumentsMatchBuilders(t *testing.T) {
 
 func recursiveTree() z.Schema[z.Dyn] {
 	var node z.Schema[z.Dyn]
-	node = z.Object(func(s *z.Shape) {
+	node = z.Object(func(s *z.ObjectBuilder) {
 		s.Field("v", z.Float64())
 		s.Field("kids", z.Array(z.Lazy(func() z.Schema[z.Dyn] { return node })).Optional())
 	})

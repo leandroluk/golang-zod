@@ -9,13 +9,13 @@ roleEnum := z.Enum("ADMIN", "MEMBER", "GUEST").Meta(func(m *z.MetaBuilder) {
 	m.ID("Role")
 })
 
-userSchema := z.Object(func(s *z.Shape) {
-	s.Field("id", z.UUID())
-	s.Field("name", z.String())
-	s.Field("email", z.Email())
-	s.Field("role", roleEnum)
-	s.Field("bio", z.String().Optional())
-	s.Field("skills", z.Array(z.String()))
+userSchema := z.Object(func(s *z.ObjectBuilder) {
+	s.Field("id").UUID()
+	s.Field("name").String()
+	s.Field("email").Email()
+	s.Field("role").Schema(roleEnum)
+	s.Field("bio").String().Optional()
+	s.Field("skills").Schema(z.Array(z.String()))
 }).Meta(func(m *z.MetaBuilder) {
 	m.ID("User")
 })

@@ -6,7 +6,7 @@ Princípios:
 * **Apenas API nativa do Zod v4** (zero legado do v3).
 * **Zero tags mágicas de validação**: regras pertencem ao código Go (`z.String().Min(2)`), com autocomplete e checagem de tipos em compilação. Tags customizadas (`zod:"..."`) são proibidas.
 * **A única tag aceita é `json:"..."`**, usada só por `z.Struct` para dar nome à chave de cada campo registrado.
-* **Dois construtores de objeto, ambos com builder**: `z.Object(func(s *z.Shape){...})` (chaves `string`, saída `map[string]any`) e `z.Struct(func(s *z.StructShape, t *T){...})` (ponteiros de campo, saída `T`). Chaves de struct vêm sempre de `json:"..."`.
+* **Dois construtores de objeto, ambos com builder**: `z.Object(func(s *z.ObjectBuilder){...})` (chaves `string`, saída `map[string]any`) e `z.Struct(func(s *z.StructBuilder, t *T){...})` (ponteiros de campo, saída `T`). Chaves de struct vêm sempre de `json:"..."`.
 * **Reflexão só na construção de `z.Struct`**; `unsafe` confinado a `struct_unsafe.go`. Não existe `ParseInto`.
 * **Entrada por streaming** (`encoding/json/v2` + `jsontext`) para reduzir alocação.
 * **Erros como valores & i18n nativo.**
@@ -18,14 +18,14 @@ Princípios:
 
 Resultado de compilação real, que condiciona todo o design:
 
-| Recurso | Resultado | Consequência |
-| :--- | :--- | :--- |
-| Métodos com type parameter (`func (s S) Map[T any](v T) T`) | **Compila** | `Transform[U]`, `Pipe[U]` podem ser métodos de tipos concretos. |
-| Método genérico em interface (`Foo[T any]()`) | **Erro**: `interface method must have no type parameters` | A interface `Schema[T]` comum só pode ter o núcleo não genérico; combinadores genéricos não entram nela. |
-| `func (b Base[T]) Optional() Base[*T]` | **Erro**: `instantiation cycle` | O método não pode devolver o **mesmo tipo base** com `T` alterado. |
-| `func (b Base[T]) Optional() OptionalSchema[T]` (tipo wrapper distinto, `Parse` retorna `Option[T]`; `Nullable` retorna `Nullable[T]`) | **Compila** | `.Optional()` fluente **existe**, retornando um wrapper. O wrapper não expõe novos `.Optional()`, o que evita o ciclo. |
-| `z.Enum[T ~string](v ...T)` variádico | **Compila** | `z.Enum("a","b")`, `z.Enum(roles...)` e `z.Enum(Admin, User)` funcionam. |
-| `encoding/json/v2` | **Compila**, sem `GOEXPERIMENT` | Pode ser a base do parsing em streaming. |
+| Recurso                                                                                                                                | Resultado                                                 | Consequência                                                                                                           |
+| :------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| Métodos com type parameter (`func (s S) Map[T any](v T) T`)                                                                            | **Compila**                                               | `Transform[U]`, `Pipe[U]` podem ser métodos de tipos concretos.                                                        |
+| Método genérico em interface (`Foo[T any]()`)                                                                                          | **Erro**: `interface method must have no type parameters` | A interface `Schema[T]` comum só pode ter o núcleo não genérico; combinadores genéricos não entram nela.               |
+| `func (b Base[T]) Optional() Base[*T]`                                                                                                 | **Erro**: `instantiation cycle`                           | O método não pode devolver o **mesmo tipo base** com `T` alterado.                                                     |
+| `func (b Base[T]) Optional() OptionalSchema[T]` (tipo wrapper distinto, `Parse` retorna `Option[T]`; `Nullable` retorna `Nullable[T]`) | **Compila**                                               | `.Optional()` fluente **existe**, retornando um wrapper. O wrapper não expõe novos `.Optional()`, o que evita o ciclo. |
+| `z.Enum[T ~string](v ...T)` variádico                                                                                                  | **Compila**                                               | `z.Enum("a","b")`, `z.Enum(roles...)` e `z.Enum(Admin, User)` funcionam.                                               |
+| `encoding/json/v2`                                                                                                                     | **Compila**, sem `GOEXPERIMENT`                           | Pode ser a base do parsing em streaming.                                                                               |
 
 Regra de design resultante:
 * **Checks que preservam `T`** (`Min`, `Max`, `Regex`, `GT`…) retornam o próprio tipo e encadeiam livremente.
@@ -69,7 +69,7 @@ Um único construtor, que recebe uma **função builder** (§3). O tratamento de
 * `z.StrictObject(...)` e `z.LooseObject(...)` existem como no Zod v4: equivalem a `.Strict()` e `.Loose()`.
 
 ```go
-user := z.Object(func(s *z.Shape) {
+user := z.Object(func(s *z.ObjectBuilder) {
     s.Field("name", z.String())
 }).Strict()
 ```
@@ -152,18 +152,18 @@ Go não distingue chave **ausente**, **`null`** e **valor zero** (`int` 0, `""`)
 * **`.Nullable()`**: a chave **tem que existir** e aceita `null`. Ausente é erro.
 * **`.Nullish()`**: a chave pode não existir **e** pode ser `null`.
 
-| Entrada na chave | Schema da chave | Resultado |
-| :--- | :--- | :--- |
-| ausente | `Optional` / `Nullish` | `None`, **sem erro** |
-| ausente | `Nullable` ou schema comum | issue `InvalidType` (`required`) |
-| `null` | `Nullable` / `Nullish` | `Null`, sem erro |
-| `null` | `Optional` ou schema comum | issue `InvalidType` |
-| presente (não nulo) | qualquer | validado normalmente |
+| Entrada na chave    | Schema da chave            | Resultado                        |
+| :------------------ | :------------------------- | :------------------------------- |
+| ausente             | `Optional` / `Nullish`     | `None`, **sem erro**             |
+| ausente             | `Nullable` ou schema comum | issue `InvalidType` (`required`) |
+| `null`              | `Nullable` / `Nullish`     | `Null`, sem erro                 |
+| `null`              | `Optional` ou schema comum | issue `InvalidType`              |
+| presente (não nulo) | qualquer                   | validado normalmente             |
 
 `.Default(v)` e `.Prefault(v)` só valem quando a chave está **ausente** (o `undefined` do Zod), **nunca para `null`**: `null` vai ao schema interno e falha, a menos que seja `.Nullable()`/`.Nullish()`. `.Default` devolve `v` sem revalidar; `.Prefault` passa `v` pelo schema interno.
 
 ```go
-z.Object(func(s *z.Shape) {
+z.Object(func(s *z.ObjectBuilder) {
     s.Field("name",      z.String().Min(2))
     s.Field("bio",       z.String().Max(280).Optional())  // chave pode faltar; null não
     s.Field("deletedAt", z.ISO.DateTime().Nullable())     // chave obrigatória; aceita null
@@ -180,19 +180,19 @@ z.Object(func(s *z.Shape) {
 
 ## 3. Declaração de schemas e ligação com structs
 
-Há **dois construtores**, ambos com **função builder** que roda **uma vez**, na criação do schema. Não há literal de mapa `z.Shape{...}` nem `z.ObjectBy`. Não há DSL em string: toda regra é código Go checado pelo compilador.
+Há **dois construtores**, ambos com **função builder** que roda **uma vez**, na criação do schema. Não há literal de mapa `z.ObjectBuilder{...}` nem `z.ObjectBy`. Não há DSL em string: toda regra é código Go checado pelo compilador.
 
 ```go
 func Object(build func(s *Shape)) *ObjectSchema                          // chaves string, saída map[string]any (z.Dyn)
-func Struct[T any](build func(s *StructShape, t *T)) *StructSchema[T]    // ponteiros de campo, saída T
+func Struct[T any](build func(s *StructBuilder, t *T)) *StructSchema[T]    // ponteiros de campo, saída T
 func (s *Shape) Field[F any](name string, sch Schema[F])
-func (s *StructShape) Field[F any](p *F, sch Schema[F])
+func (s *StructBuilder) Field[F any](p *F, sch Schema[F])
 ```
-Foram dois construtores porque, no go1.27.1, um literal `func(s *Shape)` **não** pode ser passado onde se espera `func(s *Shape, t *T)` (nem `func(s *Shape, t ...*T)`), e uma união dos dois tipos de função não infere `T`. Cada construtor tem tipos próprios, então as restrições são **de compilação**: em `StructShape.Field` um schema `.Optional()` sobre campo `string` não compila.
+Foram dois construtores porque, no go1.27.1, um literal `func(s *Shape)` **não** pode ser passado onde se espera `func(s *Shape, t *T)` (nem `func(s *Shape, t ...*T)`), e uma união dos dois tipos de função não infere `T`. Cada construtor tem tipos próprios, então as restrições são **de compilação**: em `StructBuilder.Field` um schema `.Optional()` sobre campo `string` não compila.
 
 ### 3.1. `z.Object`: saída dinâmica (`z.Dyn` = `map[string]any`)
 ```go
-UserSchema := z.Object(func(s *z.Shape) {
+UserSchema := z.Object(func(s *z.ObjectBuilder) {
     s.Field("name",  z.String().Min(2).Trim())
     s.Field("email", z.Email())
     s.Field("age",   z.Int().GTE(18).Optional())
@@ -206,7 +206,7 @@ Não existe `ParseInto`: quem quer uma struct tipada usa `z.Struct` (§3.2), e `
 ### 3.2. `z.Struct`: saída struct
 Com ponteiros para os campos. O `build` recebe um `T` zerado:
 ```go
-var UserSchema = z.Struct(func(s *z.StructShape, t *User) {
+var UserSchema = z.Struct(func(s *z.StructBuilder, t *User) {
     s.Field(&t.Name,  z.String().Min(2))
     s.Field(&t.Email, z.Email())
     s.Field(&t.Bio,   z.String().Max(280).Optional()) // campo deve ser z.Option[string]
@@ -348,21 +348,21 @@ base64Codec := z.Codec(z.String(), z.Bytes(),
 
 ## 7. O que foi cortado do Zod
 
-| Item no Zod TS | Status | Motivo |
-| :--- | :--- | :--- |
-| `.describe("...")` | Vira método do builder de metadados | `z.String().Meta(func(m *z.MetaBuilder){ m.Describe("...") })`. |
-| `formatError` (`Format()`) | Cortado | Deprecated no Zod 4; use `Treeify`. |
-| `.unique()` em arrays | Não existe | Não está no Zod 4. |
-| `z.string().email()` | Cortado | Top-level: `z.Email()`. |
-| `z.number().int()` | Cortado | Top-level: `z.Int()`. |
-| `.merge()` | Cortado | Use `.Extend()`. |
-| `.passthrough()` | Cortado | Deprecated no Zod 4; o nome do v4 é `.Loose()` (regra: só nomes do Zod v4 não deprecated). |
-| `z.strictObject()`, `z.looseObject()` | **Mantidos** (`z.StrictObject()`, `z.LooseObject()`) | Existem no Zod v4; coexistem com `.Strict()` / `.Loose()`. |
-| `.optional()` / `.nullable()` / `.nullish()` | **Mantidos** (somente encadeados: `.Optional()`, `.Nullable()`, `.Nullish()`) | Retornam tipos wrapper distintos, nunca `Base[*T]` (instantiation cycle, §0). |
-| Tags `zod:"..."` | **Proibidas** | Regras ficam em código Go; só `json:"..."` é lida. |
-| `z.enum([...])` | Mantido como `z.Enum(...)` | Variádico nativo. |
-| `z.instanceof(...)` | Cortado | Específico de protótipos JS. |
-| `z.undefined()`, `z.void()`, `z.symbol()` | Cortado | Exclusivos do runtime JS. |
+| Item no Zod TS                               | Status                                                                        | Motivo                                                                                     |
+| :------------------------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
+| `.describe("...")`                           | Vira método do builder de metadados                                           | `z.String().Meta(func(m *z.MetaBuilder){ m.Describe("...") })`.                            |
+| `formatError` (`Format()`)                   | Cortado                                                                       | Deprecated no Zod 4; use `Treeify`.                                                        |
+| `.unique()` em arrays                        | Não existe                                                                    | Não está no Zod 4.                                                                         |
+| `z.string().email()`                         | Cortado                                                                       | Top-level: `z.Email()`.                                                                    |
+| `z.number().int()`                           | Cortado                                                                       | Top-level: `z.Int()`.                                                                      |
+| `.merge()`                                   | Cortado                                                                       | Use `.Extend()`.                                                                           |
+| `.passthrough()`                             | Cortado                                                                       | Deprecated no Zod 4; o nome do v4 é `.Loose()` (regra: só nomes do Zod v4 não deprecated). |
+| `z.strictObject()`, `z.looseObject()`        | **Mantidos** (`z.StrictObject()`, `z.LooseObject()`)                          | Existem no Zod v4; coexistem com `.Strict()` / `.Loose()`.                                 |
+| `.optional()` / `.nullable()` / `.nullish()` | **Mantidos** (somente encadeados: `.Optional()`, `.Nullable()`, `.Nullish()`) | Retornam tipos wrapper distintos, nunca `Base[*T]` (instantiation cycle, §0).              |
+| Tags `zod:"..."`                             | **Proibidas**                                                                 | Regras ficam em código Go; só `json:"..."` é lida.                                         |
+| `z.enum([...])`                              | Mantido como `z.Enum(...)`                                                    | Variádico nativo.                                                                          |
+| `z.instanceof(...)`                          | Cortado                                                                       | Específico de protótipos JS.                                                               |
+| `z.undefined()`, `z.void()`, `z.symbol()`    | Cortado                                                                       | Exclusivos do runtime JS.                                                                  |
 
 ---
 

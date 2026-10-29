@@ -22,7 +22,7 @@ func coverCFail() z.Schema[any] {
 }
 
 func coverCShape(typ string) *z.ObjectSchema {
-	return z.Object(func(s *z.Shape) { s.Field("type", z.Literal(typ)) })
+	return z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Literal(typ)) })
 }
 
 // --- Union / XOR ---
@@ -113,7 +113,7 @@ func TestCoverCUnionCancelled(t *testing.T) {
 
 // @spec REQ-COMB-002
 func TestCoverCDiscriminatedUnionParse(t *testing.T) {
-	cat := z.Object(func(s *z.Shape) {
+	cat := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("type", z.Literal("cat"))
 		s.Field("lives", z.Int())
 	})
@@ -121,12 +121,12 @@ func TestCoverCDiscriminatedUnionParse(t *testing.T) {
 		Type string `json:"type"`
 		Name string `json:"name"`
 	}
-	dog := z.Struct[Dog](func(s *z.StructShape, d *Dog) {
+	dog := z.Struct[Dog](func(s *z.StructBuilder, d *Dog) {
 		s.Field(&d.Type, z.Literal("dog"))
 		s.Field(&d.Name, z.String())
 	})
-	bird := z.Object(func(s *z.Shape) { s.Field("type", z.Enum("bird", "parrot")) })
-	num := z.Object(func(s *z.Shape) { s.Field("type", z.Literal[any](1)) })
+	bird := z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Enum("bird", "parrot")) })
+	num := z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Literal[any](1)) })
 
 	u := z.DiscriminatedUnion("type", cat, dog, bird, num)
 
@@ -187,7 +187,7 @@ func TestCoverCDiscriminatedUnionParse(t *testing.T) {
 		}
 	})
 	t.Run("as object field uses discriminated kind", func(t *testing.T) {
-		wrap := z.Object(func(s *z.Shape) { s.Field("pet", u) })
+		wrap := z.Object(func(s *z.ObjectBuilder) { s.Field("pet", u) })
 		out, err := wrap.Parse(map[string]any{"pet": map[string]any{"type": "bird"}})
 		if err != nil || out["pet"] == nil {
 			t.Fatalf("%v %v", out, err)
@@ -203,22 +203,22 @@ func TestCoverCDiscriminatedUnionConstructionPanics(t *testing.T) {
 		fn   func()
 	}{
 		{"option lacks discriminator", `option lacks discriminator field "type"`, func() {
-			z.DiscriminatedUnion("type", z.Object(func(s *z.Shape) { s.Field("other", z.String()) }))
+			z.DiscriminatedUnion("type", z.Object(func(s *z.ObjectBuilder) { s.Field("other", z.String()) }))
 		}},
 		{"discriminator is not a literal or enum", "must be a Literal or Enum", func() {
-			z.DiscriminatedUnion("type", z.Object(func(s *z.Shape) { s.Field("type", z.String()) }))
+			z.DiscriminatedUnion("type", z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.String()) }))
 		}},
 		{"literal with int values is not usable", "must be a Literal or Enum", func() {
-			z.DiscriminatedUnion("type", z.Object(func(s *z.Shape) { s.Field("type", z.Literal(1)) }))
+			z.DiscriminatedUnion("type", z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Literal(1)) }))
 		}},
 		{"literal without values", "must be a Literal or Enum", func() {
-			z.DiscriminatedUnion("type", z.Object(func(s *z.Shape) { s.Field("type", z.Literal[string]()) }))
+			z.DiscriminatedUnion("type", z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Literal[string]()) }))
 		}},
 		{"literal over any without values", "must be a Literal or Enum", func() {
-			z.DiscriminatedUnion("type", z.Object(func(s *z.Shape) { s.Field("type", z.Literal[any]()) }))
+			z.DiscriminatedUnion("type", z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Literal[any]()) }))
 		}},
 		{"empty literal value", "must be a Literal or Enum", func() {
-			z.DiscriminatedUnion("type", z.Object(func(s *z.Shape) { s.Field("type", z.Literal("")) }))
+			z.DiscriminatedUnion("type", z.Object(func(s *z.ObjectBuilder) { s.Field("type", z.Literal("")) }))
 		}},
 		{"duplicate discriminator value", `duplicate discriminator value "a"`, func() {
 			z.DiscriminatedUnion("type", coverCShape("a"), coverCShape("a"))
@@ -272,7 +272,7 @@ func TestCoverCUnionModifiers(t *testing.T) {
 	}
 
 	// kind() for plain/XOR unions when used as an object field
-	wrap := z.Object(func(s *z.Shape) {
+	wrap := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("u", u)
 		s.Field("x", z.XOR(z.Int(), z.String()))
 	})
@@ -297,8 +297,8 @@ func TestCoverCUnionExporterAccessors(t *testing.T) {
 
 // @spec REQ-COMB-004
 func TestCoverCIntersectionObjects(t *testing.T) {
-	left := z.Object(func(s *z.Shape) { s.Field("id", z.Int()) })
-	right := z.Object(func(s *z.Shape) { s.Field("name", z.String()) })
+	left := z.Object(func(s *z.ObjectBuilder) { s.Field("id", z.Int()) })
+	right := z.Object(func(s *z.ObjectBuilder) { s.Field("name", z.String()) })
 	inter := z.Intersection(left, right)
 
 	got, err := inter.Parse(map[string]any{"id": 1, "name": "n"})
@@ -322,8 +322,8 @@ func TestCoverCIntersectionObjects(t *testing.T) {
 	})
 	t.Run("same key with equal values merges", func(t *testing.T) {
 		both := z.Intersection(
-			z.Object(func(s *z.Shape) { s.Field("k", z.Int()) }),
-			z.Object(func(s *z.Shape) { s.Field("k", z.Int()) }),
+			z.Object(func(s *z.ObjectBuilder) { s.Field("k", z.Int()) }),
+			z.Object(func(s *z.ObjectBuilder) { s.Field("k", z.Int()) }),
 		)
 		got, err := both.Parse(map[string]any{"k": 3})
 		if err != nil || !reflect.DeepEqual(got, z.Dyn{"k": 3}) {
@@ -332,8 +332,8 @@ func TestCoverCIntersectionObjects(t *testing.T) {
 	})
 	t.Run("conflict is an unmergeable custom issue with path", func(t *testing.T) {
 		conflict := z.Intersection(
-			z.Object(func(s *z.Shape) { s.Field("k", z.Int()) }),
-			z.Object(func(s *z.Shape) { s.Field("k", z.Int().Default(0)) }),
+			z.Object(func(s *z.ObjectBuilder) { s.Field("k", z.Int()) }),
+			z.Object(func(s *z.ObjectBuilder) { s.Field("k", z.Int().Default(0)) }),
 		)
 		if _, err := conflict.Parse(map[string]any{"k": 3}); err != nil {
 			t.Fatalf("identical values must merge: %v", err)
@@ -441,7 +441,7 @@ func TestCoverCIntersectionMergeValues(t *testing.T) {
 // @spec REQ-COMB-004
 func TestCoverCIntersectionRealArrays(t *testing.T) {
 	obj := func(k string, sch z.AnySchema) *z.ObjectSchema {
-		return z.Object(func(s *z.Shape) { s.Field(k, sch) })
+		return z.Object(func(s *z.ObjectBuilder) { s.Field(k, sch) })
 	}
 	ints := z.Array(z.Int())
 	inter := z.Intersection(obj("l", ints), obj("l", z.Array(z.Int())))
@@ -491,8 +491,8 @@ func TestCoverCIntersectionCancelled(t *testing.T) {
 
 // @spec REQ-COMB-008 REQ-CORE-010 REQ-PIPE-007 REQ-COMB-006
 func TestCoverCIntersectionModifiers(t *testing.T) {
-	left := z.Object(func(s *z.Shape) { s.Field("a", z.Int()) })
-	right := z.Object(func(s *z.Shape) { s.Field("b", z.Int()) })
+	left := z.Object(func(s *z.ObjectBuilder) { s.Field("a", z.Int()) })
+	right := z.Object(func(s *z.ObjectBuilder) { s.Field("b", z.Int()) })
 	in := z.Intersection(left, right)
 	valid := map[string]any{"a": 1, "b": 2}
 
@@ -543,7 +543,7 @@ func TestCoverCLazy(t *testing.T) {
 	calls := 0
 	lz := z.Lazy(func() z.Schema[z.Dyn] {
 		calls++
-		return z.Object(func(s *z.Shape) { s.Field("n", z.Int()) }).
+		return z.Object(func(s *z.ObjectBuilder) { s.Field("n", z.Int()) }).
 			Meta(func(m *z.MetaBuilder) { m.ID("coverC_lazy_target").Title("lazy target") })
 	})
 

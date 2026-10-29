@@ -6,12 +6,12 @@
 
 Go does not have a native `undefined` type. `golang-zod` defines precise presence types in `z.Option[T]` and `z.Nullable[T]`.
 
-| Modifier | Return Type | Missing Key | `null` Value |
-| :--- | :--- | :--- | :--- |
-| `.Optional()` | `z.Option[T]` | `None[T]()` | InvalidType Error |
-| `.Nullable()` | `z.Nullable[T]` | Required | `NullableNull[T]()` |
-| `.Nullish()` | `z.Option[Nullable[T]]` | `None` | `Some(NullableNull)` |
-| `.Default(v)` | `T` | Evaluates fallback | Fails unless Nullable |
+| Modifier      | Return Type             | Missing Key        | `null` Value          |
+| :------------ | :---------------------- | :----------------- | :-------------------- |
+| `.Optional()` | `z.Option[T]`           | `None[T]()`        | InvalidType Error     |
+| `.Nullable()` | `z.Nullable[T]`         | Required           | `NullableNull[T]()`   |
+| `.Nullish()`  | `z.Option[Nullable[T]]` | `None`             | `Some(NullableNull)`  |
+| `.Default(v)` | `T`                     | Evaluates fallback | Fails unless Nullable |
 
 ### Unpacking `Option[T]` and `Nullable[T]`
 
@@ -44,14 +44,14 @@ xor := z.XOR(z.Int().GTE(0), z.Int().LTE(10))
 ### Discriminated Union (O(1) Map Dispatch)
 
 ```go
-circle := z.Object(func(s *z.Shape) {
-	s.Field("kind", z.Literal("circle"))
-	s.Field("radius", z.Float64())
+circle := z.Object(func(s *z.ObjectBuilder) {
+	s.Field("kind").Literal("circle")
+	s.Field("radius").Float64()
 })
 
-square := z.Object(func(s *z.Shape) {
-	s.Field("kind", z.Literal("square"))
-	s.Field("side", z.Float64())
+square := z.Object(func(s *z.ObjectBuilder) {
+	s.Field("kind").Literal("square")
+	s.Field("side").Float64()
 })
 
 shapeUnion := z.DiscriminatedUnion("kind", circle, square)
@@ -66,9 +66,9 @@ both := z.Intersection(partA, partB)
 // Recursive tree structures
 var treeSchema z.Schema[z.Dyn]
 treeSchema = z.Lazy(func() z.Schema[z.Dyn] {
-	return z.Object(func(s *z.Shape) {
-		s.Field("name", z.String())
-		s.Field("children", z.Array(treeSchema).Optional())
+	return z.Object(func(s *z.ObjectBuilder) {
+		s.Field("name").String()
+		s.Field("children").Schema(z.Array(treeSchema).Optional())
 	})
 })
 ```

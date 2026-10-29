@@ -145,7 +145,9 @@ func (s *MapSchema[K, V]) clone() *MapSchema[K, V] {
 		size:      s.size,
 	}
 	c.BaseSchema = NewBaseSchema[map[K]V](&mapNode[K, V]{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 

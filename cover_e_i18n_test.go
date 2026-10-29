@@ -175,7 +175,7 @@ func TestCoverEConfigUseContext(t *testing.T) {
 		t.Fatalf("abort-early not stored under custom key")
 	}
 
-	sch := z.Object(func(s *z.Shape) {
+	sch := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", z.String())
 		s.Field("b", z.String())
 	})
@@ -204,7 +204,7 @@ func TestCoverEConfigUseContext(t *testing.T) {
 
 // @spec REQ-CORE-011
 func TestCoverEAbortEarly(t *testing.T) {
-	sch := z.Object(func(s *z.Shape) {
+	sch := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("a", z.String())
 		s.Field("b", z.String())
 	})

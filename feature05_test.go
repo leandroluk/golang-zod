@@ -63,11 +63,11 @@ func TestREQ_COMB_001_002_003_Union(t *testing.T) {
 	})
 
 	t.Run("REQ-COMB-002: DiscriminatedUnion O(1) dispatch", func(t *testing.T) {
-		circle := z.Object(func(s *z.Shape) {
+		circle := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("kind", z.Literal("circle"))
 			s.Field("radius", z.Float64())
 		})
-		square := z.Object(func(s *z.Shape) {
+		square := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("kind", z.Literal("square"))
 			s.Field("side", z.Float64())
 		})
@@ -99,10 +99,10 @@ func TestREQ_COMB_001_002_003_Union(t *testing.T) {
 // @spec REQ-COMB-004 REQ-COMB-005
 func TestREQ_COMB_004_005_Intersection(t *testing.T) {
 	t.Run("REQ-COMB-004: Intersection merges valid outputs", func(t *testing.T) {
-		part1 := z.Object(func(s *z.Shape) {
+		part1 := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("id", z.Int())
 		})
-		part2 := z.Object(func(s *z.Shape) {
+		part2 := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 		})
 
@@ -125,10 +125,10 @@ func TestREQ_COMB_004_005_Intersection(t *testing.T) {
 	})
 
 	t.Run("REQ-COMB-005: Intersection conflicts return error", func(t *testing.T) {
-		part1 := z.Object(func(s *z.Shape) {
+		part1 := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("version", z.Literal(1))
 		})
-		part2 := z.Object(func(s *z.Shape) {
+		part2 := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("version", z.Literal(2))
 		})
 
@@ -148,7 +148,7 @@ func TestREQ_COMB_007_Lazy(t *testing.T) {
 	t.Run("REQ-COMB-007: Lazy recursive schema resolves and memoizes correctly", func(t *testing.T) {
 		var categorySchema z.Schema[z.Dyn]
 		categorySchema = z.Lazy(func() z.Schema[z.Dyn] {
-			return z.Object(func(s *z.Shape) {
+			return z.Object(func(s *z.ObjectBuilder) {
 				s.Field("name", z.String())
 				s.Field("subcategories", z.Array(categorySchema))
 			})

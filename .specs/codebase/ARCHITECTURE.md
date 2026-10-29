@@ -15,7 +15,7 @@ golang-zod/
 ├── string.go, formats.go, iso.go, number.go, primitives.go, coerce.go
 ├── enum.go, array.go, tuple.go, set.go, map.go
 ├── object.go           # Object, Shape, unknown-key modes, shape ops
-├── struct.go           # Struct[T], StructShape, construction (reflect, bootstrap only)
+├── struct.go           # Struct[T], StructBuilder, construction (reflect, bootstrap only)
 ├── struct_unsafe.go    # StructSchema[T] field setters (the only file importing unsafe)
 ├── record.go, union.go, intersection.go, lazy.go
 ├── modifiers.go        # Optional/Nullable/Nullish/Default/Prefault/Catch/Readonly wrappers
@@ -52,8 +52,8 @@ golang-zod/
 Chain methods copy-on-write: `func (s *StringSchema) Min(n int) *StringSchema { c := *s; c.checks = append(slices.Clone(s.checks), ...); return &c }`. Schemas are never mutated after construction; safe to share across goroutines.
 
 ## 5. Objects
-- Two constructors, both with a builder run once at construction: `z.Object(func(s *z.Shape)) *ObjectSchema` (string keys, output `z.Dyn = map[string]any`, no reflect/unsafe) and `z.Struct[T](func(s *z.StructShape, t *T)) *StructSchema[T]` (pointer keys `&t.Foo`, output `T`).
-- `StructShape.Field[F any](p *F, sch Schema[F])` is compile-time checked. Offset + type are matched with `reflect` once at construction (`struct.go`); the key is the mandatory `json` tag; at parse time fields are written by `unsafe.Add` setters (`struct_unsafe.go`), no `reflect`.
+- Two constructors, both with a builder run once at construction: `z.Object(func(s *z.ObjectBuilder)) *ObjectSchema` (string keys, output `z.Dyn = map[string]any`, no reflect/unsafe) and `z.Struct[T](func(s *z.StructBuilder, t *T)) *StructSchema[T]` (pointer keys `&t.Foo`, output `T`).
+- `StructBuilder.Field[F any](p *F, sch Schema[F])` is compile-time checked. Offset + type are matched with `reflect` once at construction (`struct.go`); the key is the mandatory `json` tag; at parse time fields are written by `unsafe.Add` setters (`struct_unsafe.go`), no `reflect`.
 - There is no `ParseInto`; typed output comes from `z.Struct`. `json:"name"` is mandatory on every registered field, with no fallback to the field name.
 - Different types per constructor, so `*StructSchema[T]` simply lacks `.Loose/.Catchall/.Extend/.Partial/.Required`.
 

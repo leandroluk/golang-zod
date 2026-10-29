@@ -197,7 +197,7 @@ func TestCoverDDefaultPrefaultCatchReadonly(t *testing.T) {
 // Nodes report their kind when used as object fields and exporters unwrap them.
 // @spec REQ-PIPE-001 REQ-PRIM-009
 func TestCoverDModifierKindsInObject(t *testing.T) {
-	obj := z.Object(func(s *z.Shape) {
+	obj := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("opt", z.NewOptionalSchema[string](z.String()))
 		s.Field("nul", z.NewNullableSchema[string](z.String()))
 		s.Field("nsh", z.NewNullishSchema[string](z.String()))

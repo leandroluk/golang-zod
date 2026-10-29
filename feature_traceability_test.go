@@ -10,8 +10,8 @@ import (
 
 // @spec REQ-GQL-003
 func TestREQ_GQL_003_TypeNaming(t *testing.T) {
-	user := z.Object(func(s *z.Shape) {
-		s.Field("address", z.Object(func(a *z.Shape) {
+	user := z.Object(func(s *z.ObjectBuilder) {
+		s.Field("address", z.Object(func(a *z.ObjectBuilder) {
 			a.Field("city", z.String())
 		}))
 	}).Meta(func(m *z.MetaBuilder) { m.ID("TraceUser") })

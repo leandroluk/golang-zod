@@ -59,7 +59,7 @@ func TestREQ_PIPE_007_ErrorCustomization(t *testing.T) {
 	})
 
 	t.Run("schema-level does not leak to children", func(t *testing.T) {
-		obj := z.Object(func(s *z.Shape) {
+		obj := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("a", z.String())
 		}).Error("object-level")
 		_, err := obj.Parse(map[string]any{"a": 1})
@@ -95,7 +95,7 @@ func TestREQ_PIPE_007_ErrorCustomization(t *testing.T) {
 	})
 
 	t.Run("exporters see through error wrappers", func(t *testing.T) {
-		sch, err := z.ToJSONSchema(z.Object(func(s *z.Shape) {
+		sch, err := z.ToJSONSchema(z.Object(func(s *z.ObjectBuilder) {
 			s.Field("a", z.String().Error("x"))
 		}).Error("y"))
 		if err != nil || !strings.Contains(string(sch), `"type":"object"`) {

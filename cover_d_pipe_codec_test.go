@@ -90,7 +90,7 @@ func TestCoverDPreprocess(t *testing.T) {
 // Kinds are consulted when these schemas are object fields.
 // @spec REQ-PIPE-003 REQ-PIPE-004 REQ-PIPE-005
 func TestCoverDPipelineKindsInObject(t *testing.T) {
-	obj := z.Object(func(s *z.Shape) {
+	obj := z.Object(func(s *z.ObjectBuilder) {
 		s.Field("tr", z.Transform[string, int](z.String(), func(s string) (int, error) { return len(s), nil }))
 		s.Field("pp", z.Pipe[string, string](z.String(), z.String().Min(1)))
 		s.Field("rf", z.Refine[string](z.String(), func(string) bool { return true }))

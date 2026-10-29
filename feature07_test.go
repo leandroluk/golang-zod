@@ -10,7 +10,7 @@ import (
 // @spec REQ-EXP-001 REQ-EXP-002 REQ-EXP-003 REQ-EXP-004 REQ-EXP-005 REQ-EXP-006
 func TestREQ_EXP_001_002_003_004_005_006_JSONSchema(t *testing.T) {
 	t.Run("REQ-EXP-001 & REQ-EXP-002: ToJSONSchema Draft 2020-12 and OpenAPI 3.0", func(t *testing.T) {
-		user := z.Object(func(s *z.Shape) {
+		user := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 			s.Field("age", z.Int())
 			s.Field("bio", z.String().Optional())
@@ -43,7 +43,7 @@ func TestREQ_EXP_001_002_003_004_005_006_JSONSchema(t *testing.T) {
 	t.Run("REQ-EXP-003: Cycle detection and $defs sharing", func(t *testing.T) {
 		var catSchema z.Schema[z.Dyn]
 		catSchema = z.Lazy(func() z.Schema[z.Dyn] {
-			return z.Object(func(s *z.Shape) {
+			return z.Object(func(s *z.ObjectBuilder) {
 				s.Field("name", z.String())
 				s.Field("subs", z.Array(catSchema).Optional())
 			}).Meta(func(m *z.MetaBuilder) {
@@ -79,7 +79,7 @@ func TestREQ_EXP_001_002_003_004_005_006_JSONSchema(t *testing.T) {
 	})
 
 	t.Run("REQ-EXP-005 & REQ-EXP-006: FromJSONSchema Round-trip", func(t *testing.T) {
-		original := z.Object(func(s *z.Shape) {
+		original := z.Object(func(s *z.ObjectBuilder) {
 			s.Field("title", z.String())
 			s.Field("count", z.Int())
 			s.Field("active", z.Boolean())

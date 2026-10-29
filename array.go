@@ -120,7 +120,9 @@ func (s *ArraySchema[T]) clone() *ArraySchema[T] {
 		length:  s.length,
 	}
 	c.BaseSchema = NewBaseSchema[[]T](&arrayNode[T]{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 

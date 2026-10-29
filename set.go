@@ -116,7 +116,9 @@ func (s *SetSchema[T]) clone() *SetSchema[T] {
 		size:    s.size,
 	}
 	c.BaseSchema = NewBaseSchema[map[T]struct{}](&setNode[T]{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 

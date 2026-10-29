@@ -8,10 +8,10 @@ import (
 )
 
 func gapYAbsentObject() *z.ObjectSchema {
-	return z.Object(func(s *z.Shape) {
+	return z.Object(func(s *z.ObjectBuilder) {
 		s.Field("d", z.String().Default("dv"))
-		s.Field("p", z.NewPrefaultSchema[string](z.String().Min(2), "pv"))
-		s.Field("c", z.NewCatchSchema[string](z.String(), "cv"))
+		s.Field("p", z.NewPrefaultSchema(z.String().Min(2), "pv"))
+		s.Field("c", z.NewCatchSchema(z.String(), "cv"))
 		s.Field("req", z.String())
 	})
 }
@@ -41,8 +41,8 @@ func TestGapYObjectPresentValues(t *testing.T) {
 
 // @spec REQ-PIPE-001
 func TestGapYObjectPrefaultInnerFailure(t *testing.T) {
-	obj := z.Object(func(s *z.Shape) {
-		s.Field("p", z.NewPrefaultSchema[string](z.String().Min(5), "ab"))
+	obj := z.Object(func(s *z.ObjectBuilder) {
+		s.Field("p", z.NewPrefaultSchema(z.String().Min(5), "ab"))
 	})
 	_, err := obj.Parse(map[string]any{})
 	zerr, ok := err.(*z.ZodError)
@@ -53,8 +53,8 @@ func TestGapYObjectPrefaultInnerFailure(t *testing.T) {
 
 // @spec REQ-PIPE-001
 func TestGapYCatchAbsentNullableInner(t *testing.T) {
-	obj := z.Object(func(s *z.Shape) {
-		s.Field("c", z.NewCatchSchema[z.Nullable[string]](z.String().Nullable(), z.NullableOf("cv")))
+	obj := z.Object(func(s *z.ObjectBuilder) {
+		s.Field("c", z.NewCatchSchema(z.String().Nullable(), z.NullableOf("cv")))
 	})
 	got, err := obj.Parse(map[string]any{})
 	if err != nil || !reflect.DeepEqual(got, z.Dyn{"c": z.NullableOf("cv")}) {
@@ -70,10 +70,10 @@ type gapYStructT struct {
 }
 
 func gapYStruct() *z.StructSchema[gapYStructT] {
-	return z.Struct[gapYStructT](func(s *z.StructShape, v *gapYStructT) {
+	return z.Struct(func(s *z.StructBuilder, v *gapYStructT) {
 		s.Field(&v.D, z.String().Default("dv"))
-		s.Field(&v.P, z.NewPrefaultSchema[string](z.String().Min(2), "pv"))
-		s.Field(&v.C, z.NewCatchSchema[string](z.String(), "cv"))
+		s.Field(&v.P, z.NewPrefaultSchema(z.String().Min(2), "pv"))
+		s.Field(&v.C, z.NewCatchSchema(z.String(), "cv"))
 		s.Field(&v.R, z.String())
 	})
 }

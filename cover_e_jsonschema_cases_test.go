@@ -13,7 +13,7 @@ type coverEJSCase struct {
 }
 
 func coverEStrObj(fields ...string) *z.ObjectSchema {
-	return z.Object(func(s *z.Shape) {
+	return z.Object(func(s *z.ObjectBuilder) {
 		for _, f := range fields {
 			s.Field(f, z.String())
 		}
@@ -44,7 +44,7 @@ var coverEJSCases = func() []coverEJSCase {
 
 	// objects
 	obj := func() *z.ObjectSchema {
-		return z.Object(func(s *z.Shape) {
+		return z.Object(func(s *z.ObjectBuilder) {
 			s.Field("name", z.String())
 			s.Field("age", z.Int().Optional())
 			s.Field("nick", z.String().Nullish())
@@ -56,8 +56,8 @@ var coverEJSCases = func() []coverEJSCase {
 	add("object strict input", obj().Strict(), z.WithIO(z.Input))
 	add("object loose", obj().Loose())
 	add("object catchall", obj().Catchall(z.Int()))
-	add("object empty", z.Object(func(s *z.Shape) {}))
-	add("object nested", z.Object(func(s *z.Shape) {
+	add("object empty", z.Object(func(s *z.ObjectBuilder) {}))
+	add("object nested", z.Object(func(s *z.ObjectBuilder) {
 		s.Field("child", coverEStrObj("x"))
 	}))
 
@@ -66,8 +66,8 @@ var coverEJSCases = func() []coverEJSCase {
 	add("xor", z.XOR(z.String(), z.Float64()))
 	disc := func() *z.UnionSchema {
 		return z.DiscriminatedUnion("kind",
-			z.Object(func(s *z.Shape) { s.Field("kind", z.Literal("a")) }),
-			z.Object(func(s *z.Shape) { s.Field("kind", z.Literal("b")) }),
+			z.Object(func(s *z.ObjectBuilder) { s.Field("kind", z.Literal("a")) }),
+			z.Object(func(s *z.ObjectBuilder) { s.Field("kind", z.Literal("b")) }),
 		)
 	}
 	add("discriminated draft", disc())
@@ -114,7 +114,7 @@ var coverEJSCases = func() []coverEJSCase {
 
 	// recursion
 	var tree *z.ObjectSchema
-	tree = z.Object(func(s *z.Shape) {
+	tree = z.Object(func(s *z.ObjectBuilder) {
 		s.Field("name", z.String())
 		s.Field("children", z.Array(z.Lazy(func() z.Schema[z.Dyn] { return tree })))
 	}).Meta(func(m *z.MetaBuilder) { m.ID("coverE_js_tree") })

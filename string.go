@@ -258,7 +258,9 @@ func (s *StringSchema) clone() *StringSchema {
 		n = &coercedStringNode{inner: n}
 	}
 	c.BaseSchema = NewBaseSchema[string](n)
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 
@@ -397,9 +399,9 @@ func (s *StringSchema) Default(v string) DefaultSchema[string] {
 func (s *StringSchema) Array() *ArraySchema[string] { return NewArraySchema[string](s) }
 func (s *StringSchema) Meta(fn func(m *MetaBuilder)) *StringSchema {
 	c := s.clone()
-	b := NewMetaBuilder(s.GetMeta())
+	b := NewMetaBuilder(s.getMeta())
 	fn(b)
-	c.SetMeta(b.Build())
+	c.setMeta(b.Build())
 	return c
 }
 

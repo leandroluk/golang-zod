@@ -63,16 +63,16 @@ import (
 )
 
 func main() {
-	userSchema := z.Object(func(s *z.Shape) {
-		s.Field("id", z.UUID())
-		s.Field("email", z.Email())
-		s.Field("name", z.String().Min(2).Trim())
-		s.Field("age", z.Int().GTE(18).Optional())
-		s.Field("role", z.Enum("admin", "member", "guest"))
+	userSchema := z.Object(func(s *z.ObjectBuilder) {
+		s.Field("id").UUID()
+		s.Field("email").Email()
+		s.Field("name").String().Min(2).Trim()
+		s.Field("age").Int().GTE(18).Optional()
+		s.Field("role").Schema(z.Enum("admin", "member", "guest"))
 	}).Meta(func(m *z.MetaBuilder) {
 		m.ID("User").
 			Title("User Profile").
-			Describe("Registered system user entity")
+			Description("Registered system user entity")
 	})
 
 	input := map[string]any{
@@ -102,11 +102,11 @@ type User struct {
 	Age   int    `json:"age"`
 }
 
-var userStructSchema = z.Struct[User](func(s *z.StructShape, u *User) {
-	s.Field(&u.ID, z.UUID())
-	s.Field(&u.Email, z.Email())
-	s.Field(&u.Name, z.String().Min(2).Trim())
-	s.Field(&u.Age, z.Int().GTE(18))
+var userStructSchema = z.Struct[User](func(s *z.StructBuilder, u *User) {
+	s.Field(&u.ID).UUID()
+	s.Field(&u.Email).Email()
+	s.Field(&u.Name).String().Min(2).Trim()
+	s.Field(&u.Age).Int().GTE(18)
 })
 
 func parseUser(rawJSON []byte) (User, error) {
@@ -148,15 +148,16 @@ func handleRequest(ctx context.Context, payload any, acceptLang string) {
 
 ## Zod v4 vs golang-zod
 
-| TypeScript Zod v4 | golang-zod | Notes |
-| :--- | :--- | :--- |
-| `z.string().min(3)` | `z.String().Min(3)` | Chained validation methods |
-| `z.email()`, `z.uuid()` | `z.Email()`, `z.UUID()` | First-class top-level formats |
-| `z.object({ name: z.string() })` | `z.Object(func(s *z.Shape) { s.Field("name", z.String()) })` | Dynamic `map[string]any` output |
-| `z.infer<typeof schema>` | `z.Struct[T](...)` | Direct typed struct compilation |
-| `.describe("...")` | `.Meta(func(m *z.MetaBuilder) { m.Describe("...") })` | Fluent immutable metadata builder |
-| `z.enum(["a", "b"])` | `z.Enum("a", "b")` | Generic variadic string enum |
-| `z.union([a, b])` | `z.Union(a, b)` | First-matching candidate |
-| `z.discriminatedUnion("type", [...])` | `z.DiscriminatedUnion("type", a, b)` | O(1) discriminator map dispatch |
-| `z.lazy(() => schema)` | `z.Lazy(func() z.Schema[T] { return ... })` | Memoized recursive data structures |
-| `z.codec(in, out, dec, enc)` | `z.Codec(in, out, dec, enc)` | Bidirectional serialization pipelines |
+| TypeScript Zod v4                     | golang-zod                                                           | Notes                                 |
+| :------------------------------------ | :------------------------------------------------------------------- | :------------------------------------ |
+| `z.string().min(3)`                   | `z.String().Min(3)`                                                  | Chained validation methods            |
+| `z.email()`, `z.uuid()`               | `z.Email()`, `z.UUID()`                                              | First-class top-level formats         |
+| `z.object({ name: z.string() })`      | `z.Object(func(s *z.ObjectBuilder) { s.Field("name").String() })`    | Dynamic `map[string]any` output       |
+| `z.infer<typeof schema>`              | `z.Struct[T](...)`                                                   | Direct typed struct compilation       |
+| `.describe("...")`                    | `.Meta(func(m *z.MetaBuilder) { m.Description("...") })`             | Fluent immutable metadata builder     |
+| `schema.meta()`                       | `z.GetMeta(schema)`                                                  | Top-level metadata accessor           |
+| `z.enum(["a", "b"])`                  | `z.Enum("a", "b")`                                                   | Generic variadic string enum          |
+| `z.union([a, b])`                     | `z.Union(a, b)`                                                      | First-matching candidate              |
+| `z.discriminatedUnion("type", [...])` | `z.DiscriminatedUnion("type", a, b)`                                 | O(1) discriminator map dispatch       |
+| `z.lazy(() => schema)`                | `z.Lazy(func() z.Schema[T] { return ... })`                          | Memoized recursive data structures    |
+| `z.codec(in, out, dec, enc)`          | `z.Codec(in, out, dec, enc)`                                         | Bidirectional serialization pipelines |

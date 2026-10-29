@@ -558,7 +558,7 @@ func (im *jsImporter) objectSchema(m map[string]any, path string) AnySchema {
 		}
 		fields[i] = f
 	}
-	obj := Object(func(s *Shape) {
+	obj := Object(func(s *ObjectBuilder) {
 		for i, k := range names {
 			s.Field(k, fields[i])
 		}

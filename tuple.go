@@ -132,7 +132,9 @@ func (s *TupleSchema) clone() *TupleSchema {
 		rest:  s.rest,
 	}
 	c.BaseSchema = NewBaseSchema[[]any](&tupleNode{schema: c})
-	c.SetMeta(s.GetMeta())
+	c.setMeta(s.getMeta())
+	c.slot = s.slot
+	c.updateSlot(c)
 	return c
 }
 
