@@ -29,6 +29,16 @@ createdAt := z.Date().DefaultFunc(time.Now)
 
 Supplier-based defaults are not exported as a `default` keyword in JSON Schema, since they have no stable value.
 
+### Pointer fields
+
+For idiomatic nullable struct fields such as `DeletedAt *time.Time`, use `.Ptr()` (or `z.Ptr(s)`): absent and `null` yield `nil`, anything else yields a pointer to the parsed value.
+
+```go
+s.Field(&e.DeletedAt).Date().Ptr()
+```
+
+`Optional()` yields `z.Option[T]` and `Nullable()` yields `z.Nullable[T]`, so the field must be declared with that type. `z.Struct` panics at construction when a field type does not match what its schema produces.
+
 ### Unpacking `Option[T]` and `Nullable[T]`
 
 ```go
