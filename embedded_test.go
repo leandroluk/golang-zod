@@ -84,3 +84,46 @@ func TestNilFieldSchemaPanics(t *testing.T) {
 		s.Field(&e.EmbIndexable, nil)
 	})
 }
+
+type EmbOnlyBase struct {
+	ID string `json:"id"`
+}
+
+type EmbOnlyEntity struct {
+	EmbOnlyBase
+	Name string `json:"name"`
+}
+
+type EmbOther struct {
+	X int `json:"x"`
+}
+
+func TestEmbedFindsFieldBySchemaType(t *testing.T) {
+	base := z.Struct(func(s *z.StructBuilder, b *EmbOnlyBase) {
+		s.Field(&b.ID, z.UUID().DefaultFunc(func() string { return "00000000-0000-4000-8000-000000000002" }))
+	})
+	s := z.Struct(func(s *z.StructBuilder, e *EmbOnlyEntity) {
+		s.Embed(base)
+		s.Field(&e.Name, z.String())
+	})
+	v, err := s.Parse(map[string]any{"name": "n"})
+	if err != nil || v.ID != "00000000-0000-4000-8000-000000000002" || v.Name != "n" {
+		t.Fatalf("%+v %v", v, err)
+	}
+	if got := strings.Join(s.FieldNames(), ","); got != "id,name" {
+		t.Fatalf("field names: %s", got)
+	}
+}
+
+func TestEmbedWithoutMatchingFieldPanics(t *testing.T) {
+	other := z.Struct(func(s *z.StructBuilder, b *EmbOther) { s.Field(&b.X, z.Int()) })
+	defer func() {
+		r := recover()
+		if r == nil || !strings.Contains(r.(string), "no embedded field of type") {
+			t.Fatalf("got %v", r)
+		}
+	}()
+	z.Struct(func(s *z.StructBuilder, e *EmbOnlyEntity) {
+		s.Embed(other)
+	})
+}

@@ -526,3 +526,42 @@ func inlineNames(sch AnySchema) []string {
 	}
 	return nil
 }
+
+// Embed flattens an embedded struct into the parent using the given schema. The embedded field is
+// found by type: it is the parent's anonymous field of type T, so s.Embed(core.IndexableEntitySchema)
+// needs no field pointer. Panics when the parent has no such embedded field, or more than one.
+func (s *StructBuilder) Embed[T any](sch *StructSchema[T]) {
+	if sch == nil {
+		panic("z.Struct: Embed: schema cannot be nil")
+	}
+	want := reflect.TypeOf((*T)(nil)).Elem()
+	var matched *reflect.StructField
+	for i := 0; i < s.tType.NumField(); i++ {
+		f := s.tType.Field(i)
+		if f.Anonymous && f.Type == want && f.Tag.Get("json") == "" {
+			if matched != nil {
+				panic(fmt.Sprintf("z.Struct: Embed: %v is embedded more than once in %v", want, s.tType))
+			}
+			matched = &f
+		}
+	}
+	if matched == nil {
+		panic(fmt.Sprintf("z.Struct: Embed: %v has no embedded field of type %v", s.tType, want))
+	}
+	if !matched.IsExported() {
+		panic(fmt.Sprintf("z.Struct: field %q must be exported", matched.Name))
+	}
+	off, name := matched.Offset, matched.Name
+	s.slots = append(s.slots, &structSlot{
+		fieldName: name,
+		fieldType: want,
+		inline:    true,
+		schema:    sch,
+		makeBinding: func(sch AnySchema) structFieldBinding {
+			b := makeFieldBinding[T]("", off, sch)
+			b.key = "\x00" + name
+			b.inline = true
+			return b
+		},
+	})
+}

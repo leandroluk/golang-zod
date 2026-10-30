@@ -151,6 +151,16 @@ var AccountSchema = z.Struct(func(s *z.StructBuilder, t *Account) {
 })
 ```
 
+`s.Embed(schema)` is a shorthand that needs no field pointer: the embedded field is the parent's anonymous field whose type matches the schema's type.
+
+```go
+var AccountSchema = z.Struct(func(s *z.StructBuilder, t *Account) {
+	s.Embed(core.IndexableEntitySchema)
+	s.Embed(core.CreatableEntitySchema)
+	s.Field(&t.Email, z.Email())
+})
+```
+
 - The embedded type must be exported; omitting the schema panics at construction.
 - Flattened keys appear in `FieldNames`, `FieldSchema`, `Keyof`, `Strict()` and the JSON Schema/GraphQL exporters.
 - `Pick`/`Omit` address the parent's own fields only.
