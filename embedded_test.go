@@ -215,3 +215,22 @@ func TestEmbedMergesExamples(t *testing.T) {
 		t.Fatalf("explicit examples: %s", out)
 	}
 }
+
+func TestMetaOnCodecAndOtherSchemas(t *testing.T) {
+	c := z.Codec[string, int](z.String(), z.Int(),
+		func(s string) (int, error) { return len(s), nil },
+		func(i int) (string, error) { return "", nil },
+	).Meta(func(m *z.MetaBuilder) { m.Description("codec") })
+	if c.GetMeta().Description != "codec" {
+		t.Fatal("codec meta")
+	}
+	if _, err := c.Parse("abc"); err != nil {
+		t.Fatal(err)
+	}
+	if z.Transform(z.String(), func(s string) (int, error) { return 1, nil }).Meta(func(m *z.MetaBuilder) { m.Description("t") }).GetMeta().Description != "t" {
+		t.Fatal("transform meta")
+	}
+	if z.JSON().Meta(func(m *z.MetaBuilder) { m.Description("j") }).GetMeta().Description != "j" {
+		t.Fatal("json meta")
+	}
+}
