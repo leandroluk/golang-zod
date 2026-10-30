@@ -251,6 +251,7 @@ func (s *UnionSchema) Meta(fn func(m *MetaBuilder)) *UnionSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 

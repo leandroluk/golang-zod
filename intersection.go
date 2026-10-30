@@ -181,6 +181,7 @@ func (s *IntersectionSchema) Meta(fn func(m *MetaBuilder)) *IntersectionSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 

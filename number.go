@@ -531,6 +531,7 @@ func (s *BigIntSchema) Meta(fn func(m *MetaBuilder)) *BigIntSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 

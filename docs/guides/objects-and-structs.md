@@ -102,3 +102,16 @@ colorPalette := z.Record(colorEnum, z.String()) // Requires red, green, and blue
 // Partial enum record
 partialPalette := z.PartialRecord(colorEnum, z.String())
 ```
+
+## Field Metadata
+
+`.Meta(...)` can be chained on any field schema, including after `Optional()`, `Nullable()`, `Default()`, `DefaultFunc()`, `Prefault()`, `Catch()` and `Readonly()`:
+
+```go
+s.Field(&t.ID).UUID().DefaultFunc(newID).Meta(func(m *z.MetaBuilder) {
+	m.Description("Entity identifier")
+	m.Examples(newID())
+})
+```
+
+The metadata is picked up by the JSON Schema and GraphQL exporters.

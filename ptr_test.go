@@ -75,3 +75,24 @@ func TestPtrFieldAllowsNilWithoutPtrCall(t *testing.T) {
 type ptrStr struct {
 	Nick *string `json:"nick"`
 }
+
+type metaEntity struct {
+	ID        string           `json:"id"`
+	CreatedAt *time.Time       `json:"created_at"`
+	Nick      z.Option[string] `json:"nick"`
+}
+
+func TestMetaOnWrappersAndFields(t *testing.T) {
+	s := z.Struct(func(s *z.StructBuilder, e *metaEntity) {
+		s.Field(&e.ID).UUID().DefaultFunc(func() string { return "x" }).Meta(func(m *z.MetaBuilder) {
+			m.Description("the id")
+		})
+		s.Field(&e.CreatedAt).Date().Meta(func(m *z.MetaBuilder) { m.Description("created") })
+		s.Field(&e.Nick).String().Optional().Meta(func(m *z.MetaBuilder) { m.Description("nick") })
+	})
+	for name, want := range map[string]string{"id": "the id", "created_at": "created", "nick": "nick"} {
+		if got := s.FieldSchema(name).GetMeta().Description; got != want {
+			t.Fatalf("%s: description %q, want %q", name, got, want)
+		}
+	}
+}

@@ -49,6 +49,7 @@ func (s *BooleanSchema) Meta(fn func(m *MetaBuilder)) *BooleanSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
@@ -92,6 +93,7 @@ func (s *NullSchema) Meta(fn func(m *MetaBuilder)) *NullSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
@@ -127,6 +129,7 @@ func (s *AnyPrimitiveSchema) Meta(fn func(m *MetaBuilder)) *AnyPrimitiveSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
@@ -171,6 +174,7 @@ func (s *NeverSchema) Meta(fn func(m *MetaBuilder)) *NeverSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
@@ -229,6 +233,7 @@ func (s *DateSchema) Meta(fn func(m *MetaBuilder)) *DateSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
@@ -284,6 +289,7 @@ func (s *BytesSchema) Meta(fn func(m *MetaBuilder)) *BytesSchema {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
@@ -348,6 +354,7 @@ func (s *LiteralSchema[T]) Meta(fn func(m *MetaBuilder)) *LiteralSchema[T] {
 	b := NewMetaBuilder(s.GetMeta())
 	fn(b)
 	c.SetMeta(b.Build())
+	c.updateSlot(&c)
 	return &c
 }
 
