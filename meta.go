@@ -100,9 +100,12 @@ func (b *MetaBuilder) Description(desc string) *MetaBuilder {
 }
 
 // @spec REQ-CORE-010
-// Examples appends example values to the schema metadata.
-func (b *MetaBuilder) Examples(examples ...any) *MetaBuilder {
-	b.meta.Examples = append(b.meta.Examples, examples...)
+// Examples appends example values to the schema metadata. T is inferred, so a typed slice
+// can be spread directly (m.Examples(values...)); use Examples[any] to mix value types.
+func (b *MetaBuilder) Examples[T any](examples ...T) *MetaBuilder {
+	for _, e := range examples {
+		b.meta.Examples = append(b.meta.Examples, e)
+	}
 	return b
 }
 

@@ -178,3 +178,17 @@ func TestStructDefaultMetaIDAndOverride(t *testing.T) {
 		t.Fatalf("expected original Meta.ID to remain %q, got %q", "RedesignUser", orig)
 	}
 }
+
+type exampleEnum string
+
+func TestExamplesAcceptsTypedSlice(t *testing.T) {
+	vals := []exampleEnum{"a", "b"}
+	sch := z.Enum(vals...).Meta(func(m *z.MetaBuilder) {
+		m.Examples(vals...)
+		m.Examples[any](1, "x")
+	})
+	got := sch.GetMeta().Examples
+	if len(got) != 4 || got[0] != exampleEnum("a") || got[2] != 1 {
+		t.Fatalf("examples: %#v", got)
+	}
+}

@@ -115,3 +115,11 @@ s.Field(&t.ID).UUID().DefaultFunc(newID).Meta(func(m *z.MetaBuilder) {
 ```
 
 The metadata is picked up by the JSON Schema and GraphQL exporters.
+
+`Examples` is generic, so a typed slice can be spread directly, e.g. an enum's values:
+
+```go
+m.Examples(IdentityAccountStatusEnumValues...)
+```
+
+To mix value types in one call, set the type explicitly: `m.Examples[any](1, "x")`.
