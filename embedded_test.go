@@ -1,6 +1,7 @@
 package z_test
 
 import (
+	stdjson "encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -232,5 +233,32 @@ func TestMetaOnCodecAndOtherSchemas(t *testing.T) {
 	}
 	if z.JSON().Meta(func(m *z.MetaBuilder) { m.Description("j") }).GetMeta().Description != "j" {
 		t.Fatal("json meta")
+	}
+}
+
+type rawEntity struct {
+	Payload stdjson.RawMessage `json:"payload"`
+}
+
+func TestRawJSON(t *testing.T) {
+	s := z.Struct(func(s *z.StructBuilder, e *rawEntity) {
+		s.Field(&e.Payload, z.RawJSON().Meta(func(m *z.MetaBuilder) { m.Description("payload") }))
+	})
+	v, err := s.Parse(map[string]any{"payload": map[string]any{"a": 1.0, "b": []any{"x"}}})
+	if err != nil || string(v.Payload) != `{"a":1,"b":["x"]}` {
+		t.Fatalf("%s %v", v.Payload, err)
+	}
+	v, err = s.Parse(map[string]any{"payload": stdjson.RawMessage(`{"k":true}`)})
+	if err != nil || string(v.Payload) != `{"k":true}` {
+		t.Fatalf("%s %v", v.Payload, err)
+	}
+	if _, err = s.Parse(map[string]any{"payload": stdjson.RawMessage(`{bad`)}); err == nil {
+		t.Fatal("expected invalid json error")
+	}
+	if _, err = s.Parse(map[string]any{"payload": struct{}{}}); err == nil {
+		t.Fatal("expected invalid json error")
+	}
+	if _, err = z.ToJSONSchema(s); err != nil {
+		t.Fatal(err)
 	}
 }

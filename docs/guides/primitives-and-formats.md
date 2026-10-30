@@ -102,6 +102,7 @@ z.Coerce.BigInt()   // "999999999999999999" -> *big.Int
 ```go
 z.NaN()                                   // only NaN
 z.JSON()                                  // any JSON-compatible value
+z.RawJSON()                               // JSON value as encoding/json.RawMessage
 z.CustomFn[int](func(v any) bool { ... }) // predicate-based schema (z.custom)
 z.Success(z.Int())                        // yields true/false instead of failing
 z.NonOptional[string](z.String().Optional())
