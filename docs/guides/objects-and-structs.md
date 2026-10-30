@@ -10,8 +10,8 @@
 
 ```go
 schema := z.Object(func(s *z.ObjectBuilder) {
-	s.Field("username").String().Min(3)
-	s.Field("score").Int().Default(0)
+	s.Field("username", z.String().Min(3))
+	s.Field("score", z.Int().Default(0))
 })
 ```
 
@@ -33,7 +33,7 @@ catchallSch  := schema.Catchall(z.String())
 ```go
 // Extend with additional fields
 extended := schema.Extend(func(s *z.ObjectBuilder) {
-	s.Field("role").String()
+	s.Field("role", z.String())
 })
 
 // Pick / Omit fields
@@ -63,10 +63,10 @@ type UserAccount struct {
 }
 
 var userAccountSchema = z.Struct[UserAccount](func(s *z.StructBuilder, u *UserAccount) {
-	s.Field(&u.ID).Int()
-	s.Field(&u.Email).Email()
-	s.Field(&u.Nickname).String().Default("guest")
-	s.Field(&u.IsPremium).Boolean()
+	s.Field(&u.ID, z.Int())
+	s.Field(&u.Email, z.Email())
+	s.Field(&u.Nickname, z.String().Default("guest"))
+	s.Field(&u.IsPremium, z.Boolean())
 })
 ```
 
@@ -105,13 +105,13 @@ partialPalette := z.PartialRecord(colorEnum, z.String())
 
 ## Field Metadata
 
-`.Meta(...)` can be chained on any field schema, including after `Optional()`, `Nullable()`, `Default()`, `DefaultFunc()`, `Prefault()`, `Catch()` and `Readonly()`:
+`.Meta(...)` can be chained on any schema you pass to `Field`, including after `Optional()`, `Nullable()`, `Default()`, `DefaultFunc()`, `Prefault()`, `Catch()` and `Readonly()`:
 
 ```go
-s.Field(&t.ID).UUID().DefaultFunc(newID).Meta(func(m *z.MetaBuilder) {
+s.Field(&t.ID, z.UUID().DefaultFunc(newID).Meta(func(m *z.MetaBuilder) {
 	m.Description("Entity identifier")
 	m.Examples(newID())
-})
+}))
 ```
 
 The metadata is picked up by the JSON Schema and GraphQL exporters.
@@ -123,6 +123,15 @@ m.Examples(IdentityAccountStatusEnumValues...)
 ```
 
 To mix value types in one call, set the type explicitly: `m.Examples[any](1, "x")`.
+
+## Declaring Fields
+
+The schema is the mandatory second argument of `Field` in both `z.Object` and `z.Struct`; there are no chained type helpers such as `s.Field(&u.Name).String()`. Pass any schema, including one defined elsewhere:
+
+```go
+s.Field("name", z.String().Min(2))
+s.Field(&u.Role, RoleEnumSchema)
+```
 
 ## Embedded Structs
 
@@ -138,7 +147,7 @@ type Account struct {
 var AccountSchema = z.Struct(func(s *z.StructBuilder, t *Account) {
 	s.Field(&t.IndexableEntity, core.IndexableEntitySchema)
 	s.Field(&t.CreatableEntity, core.CreatableEntitySchema)
-	s.Field(&t.Email).Email()
+	s.Field(&t.Email, z.Email())
 })
 ```
 

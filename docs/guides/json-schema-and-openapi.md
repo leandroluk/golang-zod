@@ -6,10 +6,10 @@
 
 ```go
 userSchema := z.Object(func(s *z.ObjectBuilder) {
-	s.Field("id").UUID()
-	s.Field("name").String().Min(2)
-	s.Field("email").Email()
-	s.Field("bio").String().Optional()
+	s.Field("id", z.UUID())
+	s.Field("name", z.String().Min(2))
+	s.Field("email", z.Email())
+	s.Field("bio", z.String().Optional())
 }).Meta(func(m *z.MetaBuilder) {
 	m.ID("User").
 		Title("User Account").

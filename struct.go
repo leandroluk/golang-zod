@@ -27,9 +27,12 @@ type StructBuilder struct {
 
 // @spec REQ-OBJ-004
 // Field binds a struct field pointer. Panics on invalid pointers, duplicate JSON names, or unexported fields.
-// When called with 1 argument, returns an *StructFieldBuilder with type aliases (.String(), .Int(), etc.).
-// When called with 2 arguments, registers the schema directly; its output must be F, or T for a *T field (nil allowed).
-func (s *StructBuilder) Field[F any](p *F, sch ...AnySchema) *StructFieldBuilder {
+// The schema is mandatory; its output must be F, or T for a *T field (nil allowed). An embedded struct
+// without a json tag is flattened into the parent.
+func (s *StructBuilder) Field[F any](p *F, sch AnySchema) {
+	if sch == nil {
+		panic("z.Struct: field schema cannot be nil")
+	}
 	if p == nil {
 		panic("z.Struct: field pointer cannot be nil")
 	}
@@ -69,9 +72,6 @@ func (s *StructBuilder) Field[F any](p *F, sch ...AnySchema) *StructFieldBuilder
 	jsonTag := matchedField.Tag.Get("json")
 	if matchedField.Anonymous && matchedField.Type.Kind() == reflect.Struct && jsonTag == "" {
 		// Embedded struct without a json tag: flattened into the parent, so it needs its own schema.
-		if len(sch) == 0 || sch[0] == nil {
-			panic(fmt.Sprintf("z.Struct: embedded field %q needs a schema: s.Field(&t.%s, schema)", matchedField.Name, matchedField.Name))
-		}
 		name := matchedField.Name
 		slot := &structSlot{
 			fieldName: name,
@@ -84,10 +84,9 @@ func (s *StructBuilder) Field[F any](p *F, sch ...AnySchema) *StructFieldBuilder
 				return b
 			},
 		}
+		slot.schema = sch
 		s.slots = append(s.slots, slot)
-		b := &StructFieldBuilder{shape: s, slot: slot}
-		b.Schema(sch[0])
-		return b
+		return
 	}
 	if jsonTag == "" || jsonTag == "-" {
 		panic(fmt.Sprintf("z.Struct: field %q must have a mandatory `json:\"name\"` tag", matchedField.Name))
@@ -112,176 +111,8 @@ func (s *StructBuilder) Field[F any](p *F, sch ...AnySchema) *StructFieldBuilder
 			return makeFieldBinding[F](jsonName, off, sch)
 		},
 	}
+	slot.schema = sch
 	s.slots = append(s.slots, slot)
-
-	b := &StructFieldBuilder{
-		shape: s,
-		slot:  slot,
-	}
-	if len(sch) > 0 && sch[0] != nil {
-		b.Schema(sch[0])
-	}
-	return b
-}
-
-// StructFieldBuilder provides fluent methods to declare schemas on a struct field.
-type StructFieldBuilder struct {
-	shape *StructBuilder
-	slot  *structSlot
-}
-
-func (b *StructFieldBuilder) bind(sch AnySchema) {
-	b.slot.schema = sch
-	if s, ok := any(sch).(interface{ setSlot(*AnySchema) }); ok {
-		s.setSlot(&b.slot.schema)
-	}
-}
-
-func (b *StructFieldBuilder) Schema(sch AnySchema) AnySchema {
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) String() *StringSchema {
-	sch := String()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Int() *NumberSchema[int] {
-	sch := Int()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Int8() *NumberSchema[int8] {
-	sch := Int8()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Int16() *NumberSchema[int16] {
-	sch := Int16()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Int32() *NumberSchema[int32] {
-	sch := Int32()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Int64() *NumberSchema[int64] {
-	sch := Int64()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Uint() *NumberSchema[uint] {
-	sch := Uint()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Uint8() *NumberSchema[uint8] {
-	sch := Uint8()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Uint16() *NumberSchema[uint16] {
-	sch := Uint16()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Uint32() *NumberSchema[uint32] {
-	sch := Uint32()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Uint64() *NumberSchema[uint64] {
-	sch := Uint64()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Float32() *NumberSchema[float32] {
-	sch := Float32()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Float64() *NumberSchema[float64] {
-	sch := Float64()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) BigInt() *BigIntSchema {
-	sch := BigInt()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Boolean() *BooleanSchema {
-	sch := Boolean()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Bool() *BooleanSchema {
-	return b.Boolean()
-}
-
-func (b *StructFieldBuilder) Date() *DateSchema {
-	sch := Date()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Bytes() *BytesSchema {
-	sch := Bytes()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Email() *StringSchema {
-	sch := Email()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) UUID() *StringSchema {
-	sch := UUID()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) URL() *StringSchema {
-	sch := URL()
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Enum(values ...string) *EnumSchema[string] {
-	sch := Enum(values...)
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Literal(val any) AnySchema {
-	sch := Literal(val)
-	b.bind(sch)
-	return sch
-}
-
-func (b *StructFieldBuilder) Any() *AnyPrimitiveSchema {
-	sch := Any()
-	b.bind(sch)
-	return sch
 }
 
 // @spec REQ-OBJ-004

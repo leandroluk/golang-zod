@@ -31,13 +31,13 @@ Supplier-based defaults are not exported as a `default` keyword in JSON Schema, 
 
 ### Pointer fields
 
-A struct field declared as a pointer, such as `DeletedAt *time.Time`, already allows `nil`: bind it with the plain schema and an absent or `null` key yields `nil`, anything else a pointer to the parsed value. No `Optional()` needed.
+A struct field declared as a pointer, such as `DeletedAt *time.Time`, already allows `nil`: pass the plain schema and an absent or `null` key yields `nil`, anything else a pointer to the parsed value. No `Optional()` needed.
 
 ```go
-s.Field(&e.DeletedAt).Date()
+s.Field(&e.DeletedAt, z.Date())
 ```
 
-The schema may also be passed as the second argument: `s.Field(&e.DeletedAt, z.Date())`. For a `*T` field the schema must produce `T`.
+For a `*T` field the schema must produce `T`.
 
 `z.Ptr(s)` / `.Ptr()` do the same explicitly. `Optional()` yields `z.Option[T]` and `Nullable()` yields `z.Nullable[T]`, so a field using them must be declared with that type; `z.Struct` panics at construction when a field type does not match what its schema produces.
 
@@ -73,13 +73,13 @@ xor := z.XOR(z.Int().GTE(0), z.Int().LTE(10))
 
 ```go
 circle := z.Object(func(s *z.ObjectBuilder) {
-	s.Field("kind").Literal("circle")
-	s.Field("radius").Float64()
+	s.Field("kind", z.Literal("circle"))
+	s.Field("radius", z.Float64())
 })
 
 square := z.Object(func(s *z.ObjectBuilder) {
-	s.Field("kind").Literal("square")
-	s.Field("side").Float64()
+	s.Field("kind", z.Literal("square"))
+	s.Field("side", z.Float64())
 })
 
 shapeUnion := z.DiscriminatedUnion("kind", circle, square)
@@ -95,8 +95,8 @@ both := z.Intersection(partA, partB)
 var treeSchema z.Schema[z.Dyn]
 treeSchema = z.Lazy(func() z.Schema[z.Dyn] {
 	return z.Object(func(s *z.ObjectBuilder) {
-		s.Field("name").String()
-		s.Field("children").Schema(z.Array(treeSchema).Optional())
+		s.Field("name", z.String())
+		s.Field("children", z.Array(treeSchema).Optional())
 	})
 })
 ```

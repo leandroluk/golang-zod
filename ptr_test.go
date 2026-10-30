@@ -14,7 +14,7 @@ type ptrEntity struct {
 
 func TestPtrStructField(t *testing.T) {
 	s := z.Struct(func(s *z.StructBuilder, e *ptrEntity) {
-		s.Field(&e.DeletedAt).Date().Ptr()
+		s.Field(&e.DeletedAt, z.Date().Ptr())
 	})
 	v, err := s.Parse(map[string]any{})
 	if err != nil || v.DeletedAt != nil {
@@ -41,13 +41,13 @@ func TestStructFieldTypeMismatchPanics(t *testing.T) {
 		}
 	}()
 	z.Struct(func(s *z.StructBuilder, e *ptrEntity) {
-		s.Field(&e.DeletedAt).Date().Optional()
+		s.Field(&e.DeletedAt, z.Date().Optional())
 	})
 }
 
 func TestPtrFieldAllowsNilWithoutPtrCall(t *testing.T) {
 	s := z.Struct(func(s *z.StructBuilder, e *ptrEntity) {
-		s.Field(&e.DeletedAt).Date()
+		s.Field(&e.DeletedAt, z.Date())
 	})
 	for _, in := range []map[string]any{{}, {"deleted_at": nil}} {
 		v, err := s.Parse(in)
@@ -62,7 +62,7 @@ func TestPtrFieldAllowsNilWithoutPtrCall(t *testing.T) {
 	if _, err = s.Parse(map[string]any{"deleted_at": "nope"}); err == nil {
 		t.Fatal("expected error")
 	}
-	ns := z.Struct(func(s *z.StructBuilder, e *ptrStr) { s.Field(&e.Nick).String() })
+	ns := z.Struct(func(s *z.StructBuilder, e *ptrStr) { s.Field(&e.Nick, z.String()) })
 	out, err := z.ToJSONSchema(ns)
 	if err != nil {
 		t.Fatal(err)
@@ -84,11 +84,11 @@ type metaEntity struct {
 
 func TestMetaOnWrappersAndFields(t *testing.T) {
 	s := z.Struct(func(s *z.StructBuilder, e *metaEntity) {
-		s.Field(&e.ID).UUID().DefaultFunc(func() string { return "x" }).Meta(func(m *z.MetaBuilder) {
+		s.Field(&e.ID, z.UUID().DefaultFunc(func() string { return "x" }).Meta(func(m *z.MetaBuilder) {
 			m.Description("the id")
-		})
-		s.Field(&e.CreatedAt).Date().Meta(func(m *z.MetaBuilder) { m.Description("created") })
-		s.Field(&e.Nick).String().Optional().Meta(func(m *z.MetaBuilder) { m.Description("nick") })
+		}))
+		s.Field(&e.CreatedAt, z.Date().Meta(func(m *z.MetaBuilder) { m.Description("created") }))
+		s.Field(&e.Nick, z.String().Optional().Meta(func(m *z.MetaBuilder) { m.Description("nick") }))
 	})
 	for name, want := range map[string]string{"id": "the id", "created_at": "created", "nick": "nick"} {
 		if got := s.FieldSchema(name).GetMeta().Description; got != want {

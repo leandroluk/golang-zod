@@ -24,10 +24,10 @@ type embEntity struct {
 
 func embSchemas() (*z.StructSchema[EmbIndexable], *z.StructSchema[EmbCreatable]) {
 	idSch := z.Struct(func(s *z.StructBuilder, t *EmbIndexable) {
-		s.Field(&t.ID).UUID().DefaultFunc(func() string { return "00000000-0000-4000-8000-000000000001" })
+		s.Field(&t.ID, z.UUID().DefaultFunc(func() string { return "00000000-0000-4000-8000-000000000001" }))
 	})
 	crSch := z.Struct(func(s *z.StructBuilder, t *EmbCreatable) {
-		s.Field(&t.CreatedAt).Date().DefaultFunc(time.Now)
+		s.Field(&t.CreatedAt, z.Date().DefaultFunc(time.Now))
 	})
 	return idSch, crSch
 }
@@ -37,7 +37,7 @@ func TestEmbeddedStructsAreFlattened(t *testing.T) {
 	s := z.Struct(func(s *z.StructBuilder, e *embEntity) {
 		s.Field(&e.EmbIndexable, idSch)
 		s.Field(&e.EmbCreatable, crSch)
-		s.Field(&e.Name).String()
+		s.Field(&e.Name, z.String())
 	}).Strict()
 
 	v, err := s.Parse(map[string]any{"name": "n"})
@@ -66,21 +66,21 @@ func TestEmbeddedStructsAreFlattened(t *testing.T) {
 	}
 	out, err := z.ToJSONSchema(z.Struct(func(s *z.StructBuilder, e *embEntity) {
 		s.Field(&e.EmbIndexable, idSch)
-		s.Field(&e.Name).String()
+		s.Field(&e.Name, z.String())
 	}))
 	if err != nil || !strings.Contains(string(out), `"id"`) || !strings.Contains(string(out), `"name"`) {
 		t.Fatalf("json schema: %s %v", out, err)
 	}
 }
 
-func TestEmbeddedWithoutSchemaPanics(t *testing.T) {
+func TestNilFieldSchemaPanics(t *testing.T) {
 	defer func() {
 		r := recover()
-		if r == nil || !strings.Contains(r.(string), "needs a schema") {
+		if r == nil || !strings.Contains(r.(string), "schema cannot be nil") {
 			t.Fatalf("got %v", r)
 		}
 	}()
 	z.Struct(func(s *z.StructBuilder, e *embEntity) {
-		s.Field(&e.EmbIndexable)
+		s.Field(&e.EmbIndexable, nil)
 	})
 }

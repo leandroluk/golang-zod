@@ -25,9 +25,9 @@ import (
 func main() {
 	// Define schema
 	schema := z.Object(func(s *z.ObjectBuilder) {
-		s.Field("name").String().Min(2)
-		s.Field("age").Int().GTE(0)
-		s.Field("email").Email()
+		s.Field("name", z.String().Min(2))
+		s.Field("age", z.Int().GTE(0))
+		s.Field("email", z.Email())
 	})
 
 	// Parse input map

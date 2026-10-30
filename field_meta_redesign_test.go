@@ -19,14 +19,14 @@ type RedesignUser struct {
 
 func TestObjectFieldAliasesAndChaining(t *testing.T) {
 	schema := z.Object(func(s *z.ObjectBuilder) {
-		s.Field("id").UUID()
-		s.Field("email").Email()
-		s.Field("name").String().Min(3)
-		s.Field("age").Int().GTE(18)
-		s.Field("score").Float64().GTE(0)
-		s.Field("active").Boolean()
-		s.Field("bio").String().Optional()
-		s.Field("tags").Schema(z.Array(z.String()))
+		s.Field("id", z.UUID())
+		s.Field("email", z.Email())
+		s.Field("name", z.String().Min(3))
+		s.Field("age", z.Int().GTE(18))
+		s.Field("score", z.Float64().GTE(0))
+		s.Field("active", z.Boolean())
+		s.Field("bio", z.String().Optional())
+		s.Field("tags", z.Array(z.String()))
 	})
 
 	valid := map[string]any{
@@ -65,14 +65,14 @@ func TestObjectFieldAliasesAndChaining(t *testing.T) {
 
 func TestStructFieldAliasesAndChaining(t *testing.T) {
 	userSchema := z.Struct(func(s *z.StructBuilder, u *RedesignUser) {
-		s.Field(&u.ID).UUID()
-		s.Field(&u.Email).Email()
-		s.Field(&u.Name).String().Min(3)
-		s.Field(&u.Age).Int().GTE(18)
-		s.Field(&u.Score).Float64().GTE(0)
-		s.Field(&u.Active).Boolean()
-		s.Field(&u.Nick).Schema(z.String().Optional())
-		s.Field(&u.Role).Schema(z.Enum("ADMIN", "USER"))
+		s.Field(&u.ID, z.UUID())
+		s.Field(&u.Email, z.Email())
+		s.Field(&u.Name, z.String().Min(3))
+		s.Field(&u.Age, z.Int().GTE(18))
+		s.Field(&u.Score, z.Float64().GTE(0))
+		s.Field(&u.Active, z.Boolean())
+		s.Field(&u.Nick, z.String().Optional())
+		s.Field(&u.Role, z.Enum("ADMIN", "USER"))
 	})
 
 	validJSON := []byte(`{
@@ -137,7 +137,7 @@ func TestMetaAndGetMeta(t *testing.T) {
 
 	// Also verify on Object
 	obj := z.Object(func(s *z.ObjectBuilder) {
-		s.Field("title").String()
+		s.Field("title", z.String())
 	}).Meta(func(m *z.MetaBuilder) {
 		m.Title("ObjectTitle")
 		m.Description("ObjectDescription")
@@ -152,7 +152,7 @@ func TestMetaAndGetMeta(t *testing.T) {
 func TestStructDefaultMetaIDAndOverride(t *testing.T) {
 	// 1. Default Meta.ID equals struct name
 	userSchema := z.Struct(func(s *z.StructBuilder, u *RedesignUser) {
-		s.Field(&u.Name).String()
+		s.Field(&u.Name, z.String())
 	})
 
 	meta := z.GetMeta(userSchema)
