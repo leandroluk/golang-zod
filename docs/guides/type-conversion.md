@@ -37,6 +37,8 @@ A struct field declared as a pointer, such as `DeletedAt *time.Time`, already al
 s.Field(&e.DeletedAt).Date()
 ```
 
+The schema may also be passed as the second argument: `s.Field(&e.DeletedAt, z.Date())`. For a `*T` field the schema must produce `T`.
+
 `z.Ptr(s)` / `.Ptr()` do the same explicitly. `Optional()` yields `z.Option[T]` and `Nullable()` yields `z.Nullable[T]`, so a field using them must be declared with that type; `z.Struct` panics at construction when a field type does not match what its schema produces.
 
 ### Unpacking `Option[T]` and `Nullable[T]`

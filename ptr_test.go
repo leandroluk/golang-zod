@@ -96,3 +96,20 @@ func TestMetaOnWrappersAndFields(t *testing.T) {
 		}
 	}
 }
+
+func TestFieldSecondArgSchemaForPointerField(t *testing.T) {
+	s := z.Struct(func(s *z.StructBuilder, e *ptrEntity) {
+		s.Field(&e.DeletedAt, z.Date().Meta(func(m *z.MetaBuilder) { m.Description("Soft deletion date") }))
+	})
+	v, err := s.Parse(map[string]any{})
+	if err != nil || v.DeletedAt != nil {
+		t.Fatalf("%+v %v", v, err)
+	}
+	v, err = s.Parse(map[string]any{"deleted_at": "2025-01-01T00:00:00Z"})
+	if err != nil || v.DeletedAt == nil {
+		t.Fatalf("%+v %v", v, err)
+	}
+	if d := s.FieldSchema("deleted_at").GetMeta().Description; d != "Soft deletion date" {
+		t.Fatalf("meta lost: %q", d)
+	}
+}

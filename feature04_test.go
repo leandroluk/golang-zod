@@ -225,7 +225,7 @@ func TestREQ_OBJ_004_006_007_Struct(t *testing.T) {
 				}
 			}()
 			z.Struct(func(s *z.StructBuilder, u *TestUser) {
-				s.Field(nil, z.Int())
+				s.Field[int](nil, z.Int())
 			})
 		}()
 	})

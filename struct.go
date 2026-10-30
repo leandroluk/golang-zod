@@ -28,8 +28,8 @@ type StructBuilder struct {
 // @spec REQ-OBJ-004
 // Field binds a struct field pointer. Panics on invalid pointers, duplicate JSON names, or unexported fields.
 // When called with 1 argument, returns an *StructFieldBuilder with type aliases (.String(), .Int(), etc.).
-// When called with 2 arguments (backwards compatibility), registers the schema directly.
-func (s *StructBuilder) Field[F any](p *F, sch ...Schema[F]) *StructFieldBuilder {
+// When called with 2 arguments, registers the schema directly; its output must be F, or T for a *T field (nil allowed).
+func (s *StructBuilder) Field[F any](p *F, sch ...AnySchema) *StructFieldBuilder {
 	if p == nil {
 		panic("z.Struct: field pointer cannot be nil")
 	}
