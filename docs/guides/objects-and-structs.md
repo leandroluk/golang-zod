@@ -162,7 +162,7 @@ var AccountSchema = z.Struct(func(s *z.StructBuilder, t *Account) {
 ```
 
 - The embedded type must be exported; omitting the schema panics at construction.
-- The embedded fields are merged into the parent's JSON Schema like Zod's `.extend(other.shape)`: all properties (with their metadata) are listed, and `required` holds the fields that are neither pointer, `Optional`, `Nullable` nor defaulted (defaults count as required in the output schema).
+- The embedded fields are merged into the parent's JSON Schema like Zod's `.extend(other.shape)`: all properties (with their metadata) are listed, and `required` holds the fields that are neither pointers, `Optional` nor defaulted on input (a `Nullable` key is still required, and defaulted keys count as required in the output schema).
 - Flattened keys appear in `FieldNames`, `FieldSchema`, `Keyof`, `Strict()` and the JSON Schema/GraphQL exporters.
 - `Pick`/`Omit` address the parent's own fields only.
 - Do not make the embedded schema `Strict()`: it sees the whole parent input.
