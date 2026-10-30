@@ -579,6 +579,12 @@ func (ctx *schemaGenCtx) build(n node, k nodeKind, meta Meta, path string) (res 
 				props[f.name] = fOut
 			}
 
+			if me, ok := n.(interface{ mergedExamples() ([]any, bool) }); ok {
+				if ex, has := me.mergedExamples(); has {
+					res["examples"] = ex
+				}
+			}
+
 			if len(props) > 0 {
 				res["properties"] = props
 			}

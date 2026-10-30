@@ -2,7 +2,9 @@ package z
 
 import (
 	"context"
+	"encoding/json/v2"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -564,4 +566,82 @@ func (s *StructBuilder) Embed[T any](sch *StructSchema[T]) {
 			return b
 		},
 	})
+}
+
+// exampleMaps keeps the examples that are JSON objects; struct values are converted through JSON.
+func exampleMaps(examples []any) []map[string]any {
+	var out []map[string]any
+	for _, ex := range examples {
+		if m, ok := ex.(map[string]any); ok {
+			out = append(out, m)
+			continue
+		}
+		b, err := json.Marshal(ex)
+		if err != nil {
+			continue
+		}
+		var m map[string]any
+		if json.Unmarshal(b, &m) == nil && m != nil {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// objectExamples builds the example objects of a struct: its own examples, or one assembled from its
+// fields' first examples, merged over the examples of its embedded structs (i-th with i-th, the last
+// one repeating when a source has fewer).
+func (n *structNode[T]) objectExamples() []map[string]any {
+	own := exampleMaps(n.schema.GetMeta().Examples)
+	var embedded [][]map[string]any
+	fromFields := map[string]any{}
+	for _, f := range n.schema.fields {
+		if f.inline {
+			if sn, ok := f.schema.node().(interface{ objectExamples() []map[string]any }); ok {
+				if ex := sn.objectExamples(); len(ex) > 0 {
+					embedded = append(embedded, ex)
+				}
+			}
+			continue
+		}
+		if ex := f.schema.GetMeta().Examples; len(ex) > 0 {
+			fromFields[f.jsonName] = ex[0]
+		}
+	}
+	if len(own) == 0 && len(fromFields) > 0 {
+		own = []map[string]any{fromFields}
+	}
+	count := len(own)
+	for _, e := range embedded {
+		count = max(count, len(e))
+	}
+	out := make([]map[string]any, 0, count)
+	for i := range count {
+		m := map[string]any{}
+		for _, e := range embedded {
+			maps.Copy(m, e[min(i, len(e)-1)])
+		}
+		if len(own) > 0 {
+			maps.Copy(m, own[min(i, len(own)-1)])
+		}
+		out = append(out, m)
+	}
+	return out
+}
+
+// mergedExamples reports the merged example objects when the struct embeds other structs.
+func (n *structNode[T]) mergedExamples() ([]any, bool) {
+	hasInline := false
+	for _, f := range n.schema.fields {
+		hasInline = hasInline || f.inline
+	}
+	if !hasInline {
+		return nil, false
+	}
+	objs := n.objectExamples()
+	out := make([]any, len(objs))
+	for i, o := range objs {
+		out[i] = o
+	}
+	return out, len(out) > 0
 }

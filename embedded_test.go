@@ -173,3 +173,45 @@ func TestEmbedMergesIntoJSONSchema(t *testing.T) {
 		t.Fatalf("output required: %s", out)
 	}
 }
+
+type EmbExBase struct {
+	ID string `json:"id"`
+}
+
+type EmbExEntity struct {
+	EmbExBase
+	Name string `json:"name"`
+	Age  int    `json:"age"`
+}
+
+func TestEmbedMergesExamples(t *testing.T) {
+	base := z.Struct(func(s *z.StructBuilder, b *EmbExBase) {
+		s.Field(&b.ID, z.String().Meta(func(m *z.MetaBuilder) { m.Examples("abc") }))
+	})
+	// Field-level examples only: one object is assembled from embedded and own fields.
+	fromFields := z.Struct(func(s *z.StructBuilder, e *EmbExEntity) {
+		s.Embed(base)
+		s.Field(&e.Name, z.String().Meta(func(m *z.MetaBuilder) { m.Examples("Ana") }))
+		s.Field(&e.Age, z.Int())
+	})
+	out, err := z.ToJSONSchema(fromFields)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"examples":[{"id":"abc","name":"Ana"}]`) {
+		t.Fatalf("assembled examples: %s", out)
+	}
+	// An explicit object example on the parent overrides on top of the embedded one.
+	explicit := z.Struct(func(s *z.StructBuilder, e *EmbExEntity) {
+		s.Embed(base)
+		s.Field(&e.Name, z.String())
+		s.Field(&e.Age, z.Int())
+	}).Meta(func(m *z.MetaBuilder) { m.Examples(map[string]any{"name": "Bia", "age": 30}) })
+	out, err = z.ToJSONSchema(explicit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(out), `"examples":[{"age":30,"id":"abc","name":"Bia"}]`) {
+		t.Fatalf("explicit examples: %s", out)
+	}
+}
