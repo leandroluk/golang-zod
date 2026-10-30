@@ -14,6 +14,7 @@ type structSlot struct {
 	schema      AnySchema
 	makeBinding func(sch AnySchema) structFieldBinding
 	fieldType   reflect.Type
+	inline      bool
 }
 
 // @spec REQ-OBJ-004
@@ -66,6 +67,28 @@ func (s *StructBuilder) Field[F any](p *F, sch ...Schema[F]) *StructFieldBuilder
 	}
 
 	jsonTag := matchedField.Tag.Get("json")
+	if matchedField.Anonymous && matchedField.Type.Kind() == reflect.Struct && jsonTag == "" {
+		// Embedded struct without a json tag: flattened into the parent, so it needs its own schema.
+		if len(sch) == 0 || sch[0] == nil {
+			panic(fmt.Sprintf("z.Struct: embedded field %q needs a schema: s.Field(&t.%s, schema)", matchedField.Name, matchedField.Name))
+		}
+		name := matchedField.Name
+		slot := &structSlot{
+			fieldName: name,
+			fieldType: expectedType,
+			inline:    true,
+			makeBinding: func(sch AnySchema) structFieldBinding {
+				b := makeFieldBinding[F]("", off, sch)
+				b.key = "\x00" + name
+				b.inline = true
+				return b
+			},
+		}
+		s.slots = append(s.slots, slot)
+		b := &StructFieldBuilder{shape: s, slot: slot}
+		b.Schema(sch[0])
+		return b
+	}
 	if jsonTag == "" || jsonTag == "-" {
 		panic(fmt.Sprintf("z.Struct: field %q must have a mandatory `json:\"name\"` tag", matchedField.Name))
 	}
@@ -303,6 +326,25 @@ func (n *structNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 	allOk := true
 
 	for _, f := range n.schema.fields {
+		if f.inline {
+			if err := ctx.checkCancel(); err != nil {
+				var zero T
+				return zero, false
+			}
+			for _, name := range inlineNames(f.schema) {
+				seenKeys[name] = struct{}{}
+			}
+			out, ok := f.schema.node().parse(ctx, rawMap)
+			if !ok {
+				allOk = false
+				if ctx.shouldAbort() {
+					break
+				}
+				continue
+			}
+			fieldValues[f.key] = out
+			continue
+		}
 		seenKeys[f.jsonName] = struct{}{}
 		rawVal, present := rawMap[f.jsonName]
 
@@ -321,7 +363,7 @@ func (n *structNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 			if k == kindDefault || k == kindPrefault || k == kindCatch {
 				out, ok := parseAbsent(ctx, f.schema.node())
 				if ok {
-					fieldValues[f.jsonName] = out
+					fieldValues[f.key] = out
 				}
 				continue
 			}
@@ -354,7 +396,7 @@ func (n *structNode[T]) parse(ctx *parseCtx, in any) (any, bool) {
 			continue
 		}
 
-		fieldValues[f.jsonName] = out
+		fieldValues[f.key] = out
 	}
 
 	if !allOk && ctx.shouldAbort() {
@@ -542,9 +584,13 @@ func (s *StructSchema[T]) ParseTo(data []byte, dst *T, ctx ...context.Context) e
 
 // @spec REQ-OBJ-009
 func (s *StructSchema[T]) FieldNames() []string {
-	names := make([]string, len(s.fields))
-	for i, f := range s.fields {
-		names[i] = f.jsonName
+	names := make([]string, 0, len(s.fields))
+	for _, f := range s.fields {
+		if f.inline {
+			names = append(names, inlineNames(f.schema)...)
+			continue
+		}
+		names = append(names, f.jsonName)
 	}
 	return names
 }
@@ -552,6 +598,14 @@ func (s *StructSchema[T]) FieldNames() []string {
 // @spec REQ-OBJ-009
 func (s *StructSchema[T]) FieldSchema(name string) AnySchema {
 	for _, f := range s.fields {
+		if f.inline {
+			if obj, ok := f.schema.node().(interface{ FieldSchema(string) AnySchema }); ok {
+				if sub := obj.FieldSchema(name); sub != nil {
+					return sub
+				}
+			}
+			continue
+		}
 		if f.jsonName == name {
 			return f.schema
 		}
@@ -631,4 +685,13 @@ func (n *autoPtrNode) parse(ctx *parseCtx, in any) (any, bool) {
 	p := reflect.New(n.ptrType.Elem())
 	p.Elem().Set(reflect.ValueOf(out))
 	return p.Interface(), true
+}
+
+
+// inlineNames lists the JSON keys contributed by an inline (embedded) struct schema.
+func inlineNames(sch AnySchema) []string {
+	if obj, ok := sch.node().(interface{ FieldNames() []string }); ok {
+		return obj.FieldNames()
+	}
+	return nil
 }

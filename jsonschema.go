@@ -796,8 +796,18 @@ func (n *objectNode) jsonSchemaObject() ([]jsField, unknownKeysMode, AnySchema) 
 
 func (n *structNode[T]) jsonSchemaObject() ([]jsField, unknownKeysMode, AnySchema) {
 	fields := make([]jsField, len(n.schema.fields))
-	for i, f := range n.schema.fields {
-		fields[i] = jsField{name: f.jsonName, schema: f.schema}
+	fields = fields[:0]
+	for _, f := range n.schema.fields {
+		if f.inline {
+			if obj, ok := f.schema.node().(interface {
+				jsonSchemaObject() ([]jsField, unknownKeysMode, AnySchema)
+			}); ok {
+				sub, _, _ := obj.jsonSchemaObject()
+				fields = append(fields, sub...)
+			}
+			continue
+		}
+		fields = append(fields, jsField{name: f.jsonName, schema: f.schema})
 	}
 	mode := unknownKeysStrip
 	if n.schema.isStrict {

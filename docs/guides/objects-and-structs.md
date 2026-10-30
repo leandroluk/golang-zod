@@ -123,3 +123,26 @@ m.Examples(IdentityAccountStatusEnumValues...)
 ```
 
 To mix value types in one call, set the type explicitly: `m.Examples[any](1, "x")`.
+
+## Embedded Structs
+
+Like `encoding/json`, an embedded struct without a `json` tag is flattened into its parent. Register it with its own schema as the second argument; that schema runs over the same input and its fields (defaults included) take part in the parent:
+
+```go
+type Account struct {
+	core.IndexableEntity   // `json:"id"`
+	core.CreatableEntity   // `json:"created_at"`
+	Email string `json:"email"`
+}
+
+var AccountSchema = z.Struct(func(s *z.StructBuilder, t *Account) {
+	s.Field(&t.IndexableEntity, core.IndexableEntitySchema)
+	s.Field(&t.CreatableEntity, core.CreatableEntitySchema)
+	s.Field(&t.Email).Email()
+})
+```
+
+- The embedded type must be exported; omitting the schema panics at construction.
+- Flattened keys appear in `FieldNames`, `FieldSchema`, `Keyof`, `Strict()` and the JSON Schema/GraphQL exporters.
+- `Pick`/`Omit` address the parent's own fields only.
+- Do not make the embedded schema `Strict()`: it sees the whole parent input.

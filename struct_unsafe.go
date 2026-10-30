@@ -6,8 +6,11 @@ import "unsafe"
 // structFieldBinding holds a field's JSON name, schema, and an unsafe setter.
 type structFieldBinding struct {
 	jsonName string
-	schema   AnySchema
-	setter   func(base unsafe.Pointer, val any)
+	// key indexes the parsed value map: the json name, or a synthetic key for inline fields.
+	key    string
+	inline bool
+	schema AnySchema
+	setter func(base unsafe.Pointer, val any)
 }
 
 // @spec REQ-OBJ-005
@@ -20,6 +23,7 @@ func makeFieldBinding[F any](jsonName string, offset uintptr, sch AnySchema) str
 	}
 	return structFieldBinding{
 		jsonName: jsonName,
+		key:      jsonName,
 		schema:   sch,
 		setter:   setter,
 	}
@@ -31,7 +35,7 @@ func allocateAndPopulate[T any](bindings []structFieldBinding, values map[string
 	var target T
 	base := unsafe.Pointer(&target)
 	for _, b := range bindings {
-		if val, exists := values[b.jsonName]; exists {
+		if val, exists := values[b.key]; exists {
 			b.setter(base, val)
 		}
 	}
