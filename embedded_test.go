@@ -127,3 +127,49 @@ func TestEmbedWithoutMatchingFieldPanics(t *testing.T) {
 		s.Embed(other)
 	})
 }
+
+type EmbExpBase struct {
+	ID   string  `json:"id"`
+	Note *string `json:"note"`
+}
+
+type EmbExpEntity struct {
+	EmbExpBase
+	Name string           `json:"name"`
+	Nick z.Option[string] `json:"nick"`
+}
+
+// Embedding merges the embedded schema's properties and requiredness into the parent's export,
+// like Zod's `.extend(other.shape)`.
+func TestEmbedMergesIntoJSONSchema(t *testing.T) {
+	base := z.Struct(func(s *z.StructBuilder, b *EmbExpBase) {
+		s.Field(&b.ID, z.UUID().DefaultFunc(func() string { return "x" }).Meta(func(m *z.MetaBuilder) { m.Description("the id") }))
+		s.Field(&b.Note, z.String().Meta(func(m *z.MetaBuilder) { m.Description("note") }))
+	})
+	s := z.Struct(func(s *z.StructBuilder, e *EmbExpEntity) {
+		s.Embed(base)
+		s.Field(&e.Name, z.String())
+		s.Field(&e.Nick, z.String().Optional())
+	})
+	in, err := z.ToJSONSchema(s, z.WithIO(z.Input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := z.ToJSONSchema(s, z.WithIO(z.Output))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`"id":{"description":"the id"`, `"note":{"description":"note"`, `"name"`, `"nick"`} {
+		if !strings.Contains(string(in), want) || !strings.Contains(string(out), want) {
+			t.Fatalf("missing %s", want)
+		}
+	}
+	// Input: id has a default and note is a pointer, so only name is required.
+	if !strings.Contains(string(in), `"required":["name"]`) {
+		t.Fatalf("input required: %s", in)
+	}
+	// Output: id is always filled by its default; pointer and optional fields stay optional.
+	if !strings.Contains(string(out), `"required":["id","name"]`) {
+		t.Fatalf("output required: %s", out)
+	}
+}
